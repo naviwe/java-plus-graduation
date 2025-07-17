@@ -1,0 +1,20 @@
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      discovery.locator.enabled: true
+      routes:
+        - id: main_service_route
+          uri: lb://main-service
+          predicates:
+            - Path=/api/events/**
+          filters:
+            - StripPrefix=1
+        - id: stats_service_route
+          uri: lb://stats-service
+          predicates:
+            - Path=/stats/**
+          filters:
+            - PrefixPath=/api/v1

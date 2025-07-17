@@ -1,7 +1,5 @@
 package ru.practicum;
 
-
-
 public class ClientException extends RuntimeException {
 
     public ClientException(int statusCode, String body) {
