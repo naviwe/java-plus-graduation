@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -50,7 +51,7 @@ public class EventPublicServiceImpl implements EventPublicService {
                                   EventMapper eventMapper,
                                   CheckEventService checkEventService,
                                   StatsFeignClient statsFeignClient,
-                                  String app) {
+                                  @Value("${my.app}") String app) {
         this.eventRepository = eventRepository;
         this.eventMapper = eventMapper;
         this.checkEventService = checkEventService;
