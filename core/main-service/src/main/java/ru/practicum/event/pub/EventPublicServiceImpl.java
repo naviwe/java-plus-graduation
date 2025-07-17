@@ -51,7 +51,7 @@ public class EventPublicServiceImpl implements EventPublicService {
                                   EventMapper eventMapper,
                                   CheckEventService checkEventService,
                                   StatsFeignClient statsFeignClient,
-                                  @Value("${my.app}") String app) {
+                                  String app) {
         this.eventRepository = eventRepository;
         this.eventMapper = eventMapper;
         this.checkEventService = checkEventService;
