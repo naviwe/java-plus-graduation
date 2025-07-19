@@ -4,7 +4,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -12,7 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ru.practicum.EndpointHitDto;
 import ru.practicum.StatsDto;
-import ru.practicum.StatsRestClient;
+import ru.practicum.StatsFeignClient;
 import ru.practicum.event.Event;
 import ru.practicum.event.EventRepository;
 import ru.practicum.event.State;
@@ -24,7 +23,6 @@ import ru.practicum.utils.CheckEventService;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,28 +31,31 @@ import java.util.stream.Collectors;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EventPublicServiceImpl implements EventPublicService {
 
-    EventRepository eventRepository;
-    EventMapper eventMapper;
-    CheckEventService checkEventService;
-    StatsRestClient statsClient;
-    String app;
+    private EventRepository eventRepository;
+    private EventMapper eventMapper;
+    private CheckEventService checkEventService;
+
+
+    private String app;
+    private StatsFeignClient client;
+
+    public EventPublicServiceImpl(EventRepository eventRepository,
+                                  EventMapper eventMapper,
+                                  CheckEventService checkEventService,
+                                  @Value("${my.app}") String app,
+                                  StatsFeignClient client) {
+        this.eventRepository = eventRepository;
+        this.eventMapper = eventMapper;
+        this.checkEventService = checkEventService;
+        this.app = app;
+        this.client = client;
+    }
 
     static LocalDateTime minTime = LocalDateTime.of(1970, 1, 1, 0, 0);
     static LocalDateTime maxTime = LocalDateTime.of(3000, 1, 1, 0, 0);
     static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    @Autowired
-    public EventPublicServiceImpl(EventRepository eventRepository,
-                                  EventMapper eventMapper,
-                                  CheckEventService checkEventService,
-                                  StatsRestClient statsClient,
-                                  @Value("${my.app}") String app) {
-        this.eventRepository = eventRepository;
-        this.eventMapper = eventMapper;
-        this.checkEventService = checkEventService;
-        this.statsClient = statsClient;
-        this.app = app;
-    }
+
 
     @Override
     public List<EventShortDto> getEvents(String text, List<Long> categories, Boolean paid,
@@ -65,7 +66,6 @@ public class EventPublicServiceImpl implements EventPublicService {
         LocalDateTime start = rangeStart != null ? LocalDateTime.parse(rangeStart, formatter) : minTime;
         LocalDateTime end = rangeEnd != null ? LocalDateTime.parse(rangeEnd, formatter) : maxTime;
         text = text != null ? text : "";
-
         Page<Event> events = eventRepository.findEvents(text, paid, start, end, categories, onlyAvailable,
                 State.PUBLISHED, pageable);
         List<EventShortDto> dtos = events.map(eventMapper::toShortDto).toList();
@@ -74,72 +74,59 @@ public class EventPublicServiceImpl implements EventPublicService {
             dtos = events.stream()
                     .sorted((event1, event2) -> {
                         if (sort.equals("EVENT_DATE")) {
-                            return event1.getEventDate().compareTo(event2.getEventDate());
+                            if (event1.getEventDate().isBefore(event2.getEventDate()))
+                                return -1;
+                            else
+                                return 1;
                         } else if (sort.equals("VIEWS")) {
-                            return Long.compare(event1.getViews(), event2.getViews());
+                            return (int) (event1.getViews() - event2.getViews());
                         }
-                        return 0;
+                        return 1;
                     })
                     .map(eventMapper::toShortDto)
-                    .collect(Collectors.toList());
+                    .toList();
         }
 
         hitStats(request);
 
+        // Получаем список URI для всех событий
         List<String> uris = dtos.stream()
                 .map(dto -> request.getRequestURI() + "/" + dto.getId())
                 .collect(Collectors.toList());
 
-        List<StatsDto> stats = getStats(request.getRequestURI(), uris);
+        // Получаем статистику просмотров для всех URI
+        List<StatsDto> stats = client.getStats(minTime.format(formatter), maxTime.format(formatter), uris, true);
 
-        dtos.forEach(dto -> stats.stream()
-                .filter(stat -> stat.getUri().equals(request.getRequestURI() + "/" + dto.getId()))
-                .findFirst()
-                .ifPresent(stat -> dto.setViews(stat.getHits())));
+        // Устанавливаем количество просмотров для каждого события
+        for (EventShortDto dto : dtos) {
+            stats.stream()
+                    .filter(stat -> stat.getUri().equals(request.getRequestURI() + "/" + dto.getId()))
+                    .findFirst()
+                    .ifPresent(stat -> dto.setViews(stat.getHits()));
+        }
 
         if (dtos.isEmpty()) {
             throw new ValidationException("Нет подходящих событий");
+        } else {
+            return dtos;
         }
-        return dtos;
     }
 
     @Override
     public EventFullDto getEventById(Long id, HttpServletRequest request) {
-        Event event = checkEventService.checkPublishedEvent(id);
-        EventFullDto eventFullDto = eventMapper.toFullDto(event);
+        EventFullDto eventFullDto = eventMapper.toFullDto(checkEventService.checkPublishedEvent(id));
         hitStats(request);
-
-        List<StatsDto> stats = getStats(request.getRequestURI(), Collections.singletonList(request.getRequestURI()));
-        if (!stats.isEmpty()) {
-            eventFullDto.setViews(stats.getFirst().getHits());
-        }
+        eventFullDto.setViews(getStats(request).getFirst().getHits());
         return eventFullDto;
     }
 
     private void hitStats(HttpServletRequest request) {
-        try {
-            statsClient.addHit(EndpointHitDto.builder()
-                    .app(app)
-                    .uri(request.getRequestURI())
-                    .ip(request.getRemoteAddr())
-                    .timestamp(LocalDateTime.now())
-                    .build());
-        } catch (Exception e) {
-            log.error("Ошибка при сохранении статистики: {}", e.getMessage());
-        }
+        client.saveHit(EndpointHitDto.builder().app(app).uri(request.getRequestURI()).ip(request.getRemoteAddr())
+                .timestamp(LocalDateTime.now()).build());
     }
 
-    private List<StatsDto> getStats(String requestUri, List<String> uris) {
-        try {
-            return statsClient.stats(
-                    minTime.format(formatter),
-                    maxTime.format(formatter),
-                    uris,
-                    true
-            );
-        } catch (Exception e) {
-            log.error("Ошибка при получении статистики для URI {}: {}", requestUri, e.getMessage());
-            return Collections.emptyList();
-        }
+    private List<StatsDto> getStats(HttpServletRequest request) {
+        return client.getStats(minTime.format(formatter),
+                maxTime.format(formatter), List.of(request.getRequestURI()), true);
     }
 }
