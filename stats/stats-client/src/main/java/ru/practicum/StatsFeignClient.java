@@ -5,10 +5,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@FeignClient(
-        name = "stats-server",
-        url = "${stats-server.url:lb://stats-server}"
-)
+@FeignClient(name = "stats-server")
 public interface StatsFeignClient {
 
     @PostMapping("/hit")
