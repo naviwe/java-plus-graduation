@@ -123,7 +123,7 @@ public class EventPublicServiceImpl implements EventPublicService {
     }
 
     private void hitStats(HttpServletRequest request) {
-        client.hit(EndpointHitDto.builder().app(app).uri(request.getRequestURI()).ip(request.getRemoteAddr())
+        client.addHit(EndpointHitDto.builder().app(app).uri(request.getRequestURI()).ip(request.getRemoteAddr())
                 .timestamp(LocalDateTime.now()).build());
     }
 

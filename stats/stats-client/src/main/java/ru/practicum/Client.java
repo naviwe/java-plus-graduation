@@ -16,7 +16,7 @@ import java.util.Optional;
 
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class Client {
+public class Client implements StatsRestClient{
     RestClient restClient;
 
     String url;
@@ -26,7 +26,7 @@ public class Client {
         this.url = url;
     }
 
-    public void hit(EndpointHitDto endpointHitDto) {
+    public void addHit(EndpointHitDto endpointHitDto) {
         UriComponents uriComponents = UriComponentsBuilder.fromHttpUrl(url).path("/hit").build();
 
         restClient.post()
