@@ -12,7 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ru.practicum.EndpointHitDto;
 import ru.practicum.StatsDto;
-import ru.practicum.StatsFeignClient;
+import ru.practicum.StatsRestClient;
 import ru.practicum.event.Event;
 import ru.practicum.event.EventRepository;
 import ru.practicum.event.State;
@@ -36,7 +36,7 @@ public class EventPublicServiceImpl implements EventPublicService {
     EventRepository eventRepository;
     EventMapper eventMapper;
     CheckEventService checkEventService;
-    StatsFeignClient statsClient;
+    StatsRestClient statsClient;
     String app;
 
     static LocalDateTime minTime = LocalDateTime.of(1970, 1, 1, 0, 0);
@@ -47,7 +47,7 @@ public class EventPublicServiceImpl implements EventPublicService {
     public EventPublicServiceImpl(EventRepository eventRepository,
                                   EventMapper eventMapper,
                                   CheckEventService checkEventService,
-                                  StatsFeignClient statsClient,
+                                  StatsRestClient statsClient,
                                   @Value("${my.app}") String app) {
         this.eventRepository = eventRepository;
         this.eventMapper = eventMapper;
@@ -118,7 +118,7 @@ public class EventPublicServiceImpl implements EventPublicService {
 
     private void hitStats(HttpServletRequest request) {
         try {
-            statsClient.saveHit(EndpointHitDto.builder()
+            statsClient.addHit(EndpointHitDto.builder()
                     .app(app)
                     .uri(request.getRequestURI())
                     .ip(request.getRemoteAddr())
@@ -131,7 +131,7 @@ public class EventPublicServiceImpl implements EventPublicService {
 
     private List<StatsDto> getStats(String requestUri, List<String> uris) {
         try {
-            return statsClient.getStats(
+            return statsClient.stats(
                     minTime.format(formatter),
                     maxTime.format(formatter),
                     uris,
