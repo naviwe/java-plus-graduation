@@ -4,15 +4,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import ru.practicum.Client;
 import ru.practicum.EndpointHitDto;
 import ru.practicum.StatsDto;
+import ru.practicum.StatsFeignClient;
 import ru.practicum.event.Event;
 import ru.practicum.event.EventRepository;
 import ru.practicum.event.State;
@@ -32,32 +31,31 @@ import java.util.stream.Collectors;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EventPublicServiceImpl implements EventPublicService {
 
-    EventRepository eventRepository;
-    EventMapper eventMapper;
-    CheckEventService checkEventService;
+    private EventRepository eventRepository;
+    private EventMapper eventMapper;
+    private CheckEventService checkEventService;
 
-    String url;
-    String app;
-    Client client;
 
+    private String app;
+    private StatsFeignClient client;
+
+    public EventPublicServiceImpl(EventRepository eventRepository,
+                                  EventMapper eventMapper,
+                                  CheckEventService checkEventService,
+                                  @Value("${my.app}") String app,
+                                  StatsFeignClient client) {
+        this.eventRepository = eventRepository;
+        this.eventMapper = eventMapper;
+        this.checkEventService = checkEventService;
+        this.app = app;
+        this.client = client;
+    }
 
     static LocalDateTime minTime = LocalDateTime.of(1970, 1, 1, 0, 0);
     static LocalDateTime maxTime = LocalDateTime.of(3000, 1, 1, 0, 0);
     static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
 
-    @Autowired
-    public EventPublicServiceImpl(EventRepository eventRepository, EventMapper eventMapper,
-                                  CheckEventService checkEventService,
-                                  @Value("${my.url}") String url,
-                                  @Value("${my.app}") String app) {
-        this.eventRepository = eventRepository;
-        this.eventMapper = eventMapper;
-        this.checkEventService = checkEventService;
-        this.url = url;
-        this.app = app;
-        client = new Client(url);
-    }
 
     @Override
     public List<EventShortDto> getEvents(String text, List<Long> categories, Boolean paid,
@@ -123,7 +121,7 @@ public class EventPublicServiceImpl implements EventPublicService {
     }
 
     private void hitStats(HttpServletRequest request) {
-        client.hit(EndpointHitDto.builder().app(app).uri(request.getRequestURI()).ip(request.getRemoteAddr())
+        client.saveHit(EndpointHitDto.builder().app(app).uri(request.getRequestURI()).ip(request.getRemoteAddr())
                 .timestamp(LocalDateTime.now()).build());
     }
 
