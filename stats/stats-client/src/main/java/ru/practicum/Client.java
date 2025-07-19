@@ -16,7 +16,7 @@ import java.util.Optional;
 
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class Client implements StatsRestClient{
+public class Client implements StatsRestClient {
     RestClient restClient;
 
     String url;
@@ -70,5 +70,4 @@ public class Client implements StatsRestClient{
                 .body(new ParameterizedTypeReference<>() {
                 });
     }
-
 }
