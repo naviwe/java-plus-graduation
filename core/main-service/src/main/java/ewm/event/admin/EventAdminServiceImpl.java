@@ -1,6 +1,12 @@
 package ewm.event.admin;
 
 import ewm.event.*;
+import ewm.event.dto.EventFullDto;
+import ewm.event.dto.UpdateEventRequest;
+import ewm.event.mapper.EventMapper;
+import ewm.utils.CheckCategoryService;
+import ewm.utils.CheckEventService;
+import ewm.utils.LoggingUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -10,19 +16,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ewm.category.model.Category;
-import ewm.event.dto.EventFullDto;
-import ewm.event.dto.UpdateEventRequest;
-import ewm.event.mapper.EventMapper;
 import ewm.exception.ConflictException;
 import ewm.exception.ForbiddenException;
-import ewm.utils.CheckCategoryService;
-import ewm.utils.CheckEventService;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-
-import static ewm.utils.LoggingUtils.logAndReturn;
 
 @Slf4j
 @Service
@@ -117,7 +116,7 @@ public class EventAdminServiceImpl implements EventAdminService {
             event.setTitle(updateEventRequest.getTitle());
         }
 
-        return logAndReturn(eventMapper.toFullDto(eventRepository.save(event)),
+        return LoggingUtils.logAndReturn(eventMapper.toFullDto(eventRepository.save(event)),
                 dto -> log.info("Event updated successfully: {}", dto)
         );
     }

@@ -1,5 +1,7 @@
 package ewm.compilation;
 
+import ewm.utils.CheckCompilationService;
+import ewm.utils.LoggingUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -11,13 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ewm.compilation.dto.CompilationDto;
 import ewm.compilation.mapper.CompilationMapper;
-import ewm.utils.CheckCompilationService;
 
 
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static ewm.utils.LoggingUtils.logAndReturn;
 
 @Slf4j
 @Service
@@ -39,7 +38,7 @@ public class CompilationServiceImpl implements CompilationService {
         } else {
             compilations = compilationRepository.findByPinned(pinned, pageable);
         }
-        return logAndReturn(compilations.stream()
+        return LoggingUtils.logAndReturn(compilations.stream()
                         .map(compilationMapper::toDto)
                         .collect(Collectors.toList()),
                 comp -> log.info("Found {} compilations", comp.size()));
@@ -47,7 +46,7 @@ public class CompilationServiceImpl implements CompilationService {
 
     @Override
     public CompilationDto findById(Long compId) {
-        return logAndReturn(compilationMapper.toDto(checkCompilationService.checkCompilation(compId)),
+        return LoggingUtils.logAndReturn(compilationMapper.toDto(checkCompilationService.checkCompilation(compId)),
                 comp -> log.info("Found compilation with id={}",
                         comp.getId())
         );

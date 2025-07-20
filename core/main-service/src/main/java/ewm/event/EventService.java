@@ -4,7 +4,6 @@ import ewm.event.dto.EventFullDto;
 import ewm.event.dto.EventShortDto;
 import ewm.event.dto.NewEventDto;
 import ewm.event.dto.UpdateEventRequest;
-import ewm.event.dto.*;
 import ewm.request.dto.ParticipationRequestDto;
 import ewm.request.dto.EventRequestStatusUpdateResult;
 import ewm.request.dto.EventRequestStatusUpdateRequest;

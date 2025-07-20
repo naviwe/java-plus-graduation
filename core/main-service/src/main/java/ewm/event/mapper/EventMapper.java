@@ -1,15 +1,15 @@
 package ewm.event.mapper;
 
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Named;
 import ewm.category.dto.CategoryDto;
-import ewm.category.mapper.CategoryMapper;
-import ewm.category.model.Category;
 import ewm.event.Event;
 import ewm.event.dto.EventFullDto;
 import ewm.event.dto.EventShortDto;
 import ewm.event.dto.NewEventDto;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
+import ewm.category.mapper.CategoryMapper;
+import ewm.category.model.Category;
 import ewm.user.UserMapper;
 
 import java.time.LocalDateTime;

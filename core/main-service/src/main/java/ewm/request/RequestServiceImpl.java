@@ -1,5 +1,6 @@
 package ewm.request;
 
+import ewm.request.dto.ParticipationRequestDto;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -10,7 +11,6 @@ import ewm.event.Event;
 import ewm.event.EventRepository;
 import ewm.event.State;
 import ewm.exception.ConflictException;
-import ewm.request.dto.ParticipationRequestDto;
 import ewm.user.User;
 import ewm.utils.CheckRequestService;
 import ewm.utils.CheckUserService;

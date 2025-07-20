@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import ewm.event.dto.*;
 import ewm.request.dto.ParticipationRequestDto;
 import ewm.request.dto.EventRequestStatusUpdateResult;
 import ewm.request.dto.EventRequestStatusUpdateRequest;
