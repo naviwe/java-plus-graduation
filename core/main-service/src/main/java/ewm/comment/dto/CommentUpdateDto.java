@@ -22,4 +22,3 @@ public class CommentUpdateDto {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     LocalDateTime updated = LocalDateTime.now();
 }
-

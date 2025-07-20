@@ -1,12 +1,12 @@
 package ewm.event.dto;
 
+import ewm.event.StateAction;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import ewm.event.StateAction;
 import ewm.validation.FuturePlusTwoHours;
 
 @Data

@@ -1,6 +1,8 @@
 package ewm.event.admin;
 
 
+import ewm.event.dto.EventFullDto;
+import ewm.event.dto.UpdateEventRequest;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -9,8 +11,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.*;
-import ewm.event.dto.EventFullDto;
-import ewm.event.dto.UpdateEventRequest;
 
 import java.util.List;
 
@@ -36,8 +36,8 @@ public class EventAdminController {
 
     @Transactional
     @PatchMapping("/{eventId}")
-    public EventFullDto publishEvent(@RequestBody(required = false) @Valid  UpdateEventRequest updateEventRequest,
-                                      @PathVariable Long eventId) {
+    public EventFullDto publishEvent(@RequestBody(required = false) @Valid UpdateEventRequest updateEventRequest,
+                                     @PathVariable Long eventId) {
 
         return eventAdminService.updateEvent(updateEventRequest,eventId);
 

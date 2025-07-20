@@ -1,9 +1,9 @@
 package ewm.request.dto;
 
+import ewm.request.RequestStatus;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
-import ewm.request.RequestStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.time.LocalDateTime;

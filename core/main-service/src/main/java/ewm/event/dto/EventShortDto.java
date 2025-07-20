@@ -1,10 +1,10 @@
 package ewm.event.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import ewm.category.dto.CategoryDto;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
-import ewm.category.dto.CategoryDto;
 import ewm.user.dto.UserShortDto;
 
 import java.time.LocalDateTime;

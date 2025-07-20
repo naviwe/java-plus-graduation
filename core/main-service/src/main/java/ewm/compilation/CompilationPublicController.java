@@ -21,8 +21,8 @@ public class CompilationPublicController {
 
     @GetMapping
     public List<CompilationDto> findCompilationsByPinned(@RequestParam(required = false) Boolean pinned,
-                                                        @PositiveOrZero @RequestParam(defaultValue = "0") Integer from,
-                                                        @Positive @RequestParam(defaultValue = "10") Integer size) {
+                                                         @PositiveOrZero @RequestParam(defaultValue = "0") Integer from,
+                                                         @Positive @RequestParam(defaultValue = "10") Integer size) {
         return compilationService.findCompilationsByPinned(pinned, from, size);
     }
 

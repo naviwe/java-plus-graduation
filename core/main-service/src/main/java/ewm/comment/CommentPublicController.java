@@ -1,10 +1,10 @@
 package ewm.comment;
 
+import ewm.comment.dto.CommentDto;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.*;
-import ewm.comment.dto.CommentDto;
 
 import java.util.List;
 

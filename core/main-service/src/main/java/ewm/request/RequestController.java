@@ -1,11 +1,11 @@
 package ewm.request;
 
+import ewm.request.dto.ParticipationRequestDto;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import ewm.request.dto.ParticipationRequestDto;
 
 import java.util.List;
 

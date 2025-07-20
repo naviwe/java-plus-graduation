@@ -1,10 +1,10 @@
 package ewm.compilation.dto;
 
 
+import ewm.event.dto.EventShortDto;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
-import ewm.event.dto.EventShortDto;
 
 import java.util.Set;
 

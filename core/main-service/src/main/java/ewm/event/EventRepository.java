@@ -25,10 +25,10 @@ public interface EventRepository extends JpaRepository<Event, Long> {
             "AND e.eventDate > :rangeStart " +
             "AND e.eventDate < :rangeEnd ")
     Page<Event> findAllEventsByAdmin(@Param("users") List<Long> users, @Param("states") List<State> states,
-                           @Param("categories") List<Long> categories,
-                           @Param("rangeStart") LocalDateTime rangeStart,
-                           @Param("rangeEnd") LocalDateTime end,
-                           Pageable pageable);
+                                     @Param("categories") List<Long> categories,
+                                     @Param("rangeStart") LocalDateTime rangeStart,
+                                     @Param("rangeEnd") LocalDateTime end,
+                                     Pageable pageable);
 
 
     @EntityGraph(attributePaths = {"category"})

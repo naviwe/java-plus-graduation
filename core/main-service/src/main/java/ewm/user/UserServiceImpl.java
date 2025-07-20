@@ -1,5 +1,6 @@
 package ewm.user;
 
+import ewm.user.dto.UserDto;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -8,7 +9,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ewm.exception.NotFoundException;
-import ewm.user.dto.UserDto;
 
 import java.util.List;
 

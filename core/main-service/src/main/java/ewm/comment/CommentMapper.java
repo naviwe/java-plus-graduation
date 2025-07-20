@@ -1,10 +1,10 @@
 package ewm.comment;
 
+import ewm.comment.dto.CommentCreateDto;
+import ewm.comment.dto.CommentDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
-import ewm.comment.dto.CommentCreateDto;
-import ewm.comment.dto.CommentDto;
 
 import java.time.LocalDateTime;
 

@@ -1,7 +1,7 @@
 package ewm.category.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import ewm.category.model.Category;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 

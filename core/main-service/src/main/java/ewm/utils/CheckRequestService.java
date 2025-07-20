@@ -1,13 +1,13 @@
 package ewm.utils;
 
+import ewm.request.Request;
+import ewm.request.RequestRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ewm.exception.NotFoundException;
-import ewm.request.Request;
-import ewm.request.RequestRepository;
 
 @Slf4j
 @Service

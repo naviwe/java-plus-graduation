@@ -1,5 +1,8 @@
 package ewm.comment;
 
+import ewm.comment.dto.CommentCreateDto;
+import ewm.comment.dto.CommentDto;
+import ewm.comment.dto.CommentUpdateDto;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -9,9 +12,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ewm.comment.dto.CommentCreateDto;
-import ewm.comment.dto.CommentDto;
-import ewm.comment.dto.CommentUpdateDto;
 import ewm.event.Event;
 import ewm.exception.ForbiddenException;
 import ewm.exception.ValidationException;

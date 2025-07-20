@@ -89,12 +89,15 @@ public class EventPublicServiceImpl implements EventPublicService {
 
         hitStats(request);
 
+        // Получаем список URI для всех событий
         List<String> uris = dtos.stream()
                 .map(dto -> request.getRequestURI() + "/" + dto.getId())
                 .collect(Collectors.toList());
 
+        // Получаем статистику просмотров для всех URI
         List<StatsDto> stats = client.getStats(minTime.format(formatter), maxTime.format(formatter), uris, true);
 
+        // Устанавливаем количество просмотров для каждого события
         for (EventShortDto dto : dtos) {
             stats.stream()
                     .filter(stat -> stat.getUri().equals(request.getRequestURI() + "/" + dto.getId()))

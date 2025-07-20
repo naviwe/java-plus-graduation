@@ -1,10 +1,10 @@
 package ewm.compilation;
 
 
+import ewm.event.Event;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import ewm.event.Event;
 
 import java.util.HashSet;
 import java.util.Set;

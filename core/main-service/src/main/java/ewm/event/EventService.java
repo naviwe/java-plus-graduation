@@ -1,12 +1,12 @@
 package ewm.event;
 
+import ewm.request.dto.EventRequestStatusUpdateRequest;
+import ewm.request.dto.EventRequestStatusUpdateResult;
+import ewm.request.dto.ParticipationRequestDto;
 import ewm.event.dto.EventFullDto;
 import ewm.event.dto.EventShortDto;
 import ewm.event.dto.NewEventDto;
 import ewm.event.dto.UpdateEventRequest;
-import ewm.request.dto.ParticipationRequestDto;
-import ewm.request.dto.EventRequestStatusUpdateResult;
-import ewm.request.dto.EventRequestStatusUpdateRequest;
 
 import java.util.List;
 
@@ -24,4 +24,3 @@ public interface EventService {
     EventRequestStatusUpdateResult updateRequestStatus(EventRequestStatusUpdateRequest requestDto, Long userId,
                                                        Long eventId);
 }
-

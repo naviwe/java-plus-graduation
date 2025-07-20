@@ -1,11 +1,11 @@
 package ewm.utils;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 import ewm.event.Event;
 import ewm.event.EventRepository;
 import ewm.event.State;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 import ewm.exception.NotFoundException;
 
 @Slf4j

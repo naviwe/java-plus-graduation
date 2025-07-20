@@ -1,12 +1,12 @@
 package ewm.compilation.mapper;
 
+import ewm.event.mapper.EventMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import ewm.compilation.Compilation;
 import ewm.compilation.dto.CompilationDto;
 import ewm.compilation.dto.NewCompilationDto;
 import ewm.compilation.dto.UpdateCompilationRequest;
-import ewm.event.mapper.EventMapper;
 
 @Mapper(componentModel = "spring", uses = {EventMapper.class})
 public interface CompilationMapper {

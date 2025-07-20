@@ -1,6 +1,7 @@
 package ewm.user;
 
 
+import ewm.user.dto.UserDto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -9,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import ewm.user.dto.UserDto;
 
 import java.util.List;
 
