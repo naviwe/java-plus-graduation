@@ -19,7 +19,7 @@ import org.springframework.stereotype.Service;
 import ewm.EndpointHitDto;
 import ewm.StatsDto;
 import ewm.exception.ValidationException;
-import ewm.src.main.java.ru.practicum.StatsClient;
+import ewm.StatsClient;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
