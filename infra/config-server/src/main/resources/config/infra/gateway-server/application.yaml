@@ -1,0 +1,23 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: main_service_route
+          uri: lb://main-service
+
+          predicates:
+            - Path=/**
+
+server:
+  port: 8080
+logging:
+  level:
+    root: INFO
+
+    org.springframework.cloud.gateway: TRACE
+
+    reactor.netty.http.client: TRACE
+
+    reactor.netty.http.server: DEBUG
+
+    org.springframework.cloud.gateway.route.RouteDefinitionLocator: TRACE
