@@ -1,7 +1,6 @@
+server:
+  port: 0
 spring:
-  application:
-    name: stats-server
-
   datasource:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://localhost:5432/statsDb
@@ -20,20 +19,4 @@ spring:
   sql:
     init:
       mode: always
-
-logging:
-  level:
-    org:
-      springframework:
-        jdbc:
-          datasource:
-            init:
-              ScriptUtils: DEBUG
-        orm:
-          jpa: INFO
-          jpa.JpaTransactionManager: DEBUG
-        transaction: INFO
-        transaction.interceptor: TRACE
-
-server:
-  port: 0
+      schema-locations: classpath:schema.sql

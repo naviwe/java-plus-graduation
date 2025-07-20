@@ -5,36 +5,14 @@ spring:
     import: "configserver:"
   cloud:
     config:
-      fail-fast: true
-      retry:
-        useRandomPolicy: true
-        max-interval: 6000
       discovery:
         enabled: true
-        service-id: config-server
-    openfeign:
-      client:
-        config:
-          main-stats-client:
-            connectTimeout: 5000
-            readTimeout: 5000
-            loggerLevel: full
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-  endpoint:
-    env:
-      show-values: ALWAYS
+        serviceId: config-server
 
 eureka:
   client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-  instance:
-    prefer-ip-address: true
-    hostname: localhost
-    instance-id: "${spring.application.name}:${random.value}"
-    lease-renewal-interval-in-seconds: 10
+    serviceUrl:
+      defaultZone: http://${eureka.instance.hostname:localhost}:${eureka.instance.port:8761}/eureka/
+logging:
+  level:
+    org.springframework.boot.context.config: DEBUG
