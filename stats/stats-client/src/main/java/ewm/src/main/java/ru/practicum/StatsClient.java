@@ -1,4 +1,4 @@
-package ewm;
+package ewm.src.main.java.ru.practicum;
 
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +12,7 @@ import ewm.StatsDto;
 import java.util.List;
 
 @FeignClient(name = "stats-server")
-public interface StatsFeignClient {
+public interface StatsClient {
 
     @PostMapping("/hit")
     ResponseEntity<Void> saveHit(@RequestBody EndpointHitDto endpointHitDto);

@@ -1,5 +1,12 @@
 package ewm.event.pub;
 
+import ewm.event.Event;
+import ewm.event.EventRepository;
+import ewm.event.State;
+import ewm.event.dto.EventFullDto;
+import ewm.event.dto.EventShortDto;
+import ewm.event.mapper.EventMapper;
+import ewm.utils.CheckEventService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -11,15 +18,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ewm.EndpointHitDto;
 import ewm.StatsDto;
-import ewm.StatsFeignClient;
-import ewm.event.Event;
-import ewm.event.EventRepository;
-import ewm.event.State;
-import ewm.event.dto.EventFullDto;
-import ewm.event.dto.EventShortDto;
-import ewm.event.mapper.EventMapper;
 import ewm.exception.ValidationException;
-import ewm.utils.CheckEventService;
+import ewm.src.main.java.ru.practicum.StatsClient;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -37,13 +37,13 @@ public class EventPublicServiceImpl implements EventPublicService {
 
 
     private String app;
-    private StatsFeignClient client;
+    private StatsClient client;
 
     public EventPublicServiceImpl(EventRepository eventRepository,
                                   EventMapper eventMapper,
                                   CheckEventService checkEventService,
                                   @Value("${my.app}") String app,
-                                  StatsFeignClient client) {
+                                  StatsClient client) {
         this.eventRepository = eventRepository;
         this.eventMapper = eventMapper;
         this.checkEventService = checkEventService;

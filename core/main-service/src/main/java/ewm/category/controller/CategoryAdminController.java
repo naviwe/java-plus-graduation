@@ -1,5 +1,8 @@
 package ewm.category.controller;
 
+import ewm.category.dto.CategoryDto;
+import ewm.category.dto.NewCategoryDto;
+import ewm.category.service.CategoryService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -7,9 +10,6 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ewm.category.dto.CategoryDto;
-import ewm.category.dto.NewCategoryDto;
-import ewm.category.service.CategoryService;
 
 @Validated
 @RestController

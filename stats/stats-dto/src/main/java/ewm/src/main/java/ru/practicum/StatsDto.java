@@ -1,4 +1,4 @@
-package ewm;
+package ewm.src.main.java.ru.practicum;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

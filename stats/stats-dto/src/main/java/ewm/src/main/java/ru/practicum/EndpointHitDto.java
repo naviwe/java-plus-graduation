@@ -1,4 +1,4 @@
-package ewm;
+package ewm.src.main.java.ru.practicum;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;

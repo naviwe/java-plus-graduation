@@ -1,4 +1,4 @@
-package ewm;
+package ewm.src.main.java.ru.practicum;
 
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -9,6 +9,8 @@ import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
+import ewm.EndpointHitDto;
+import ewm.StatsDto;
 
 import java.net.URI;
 import java.util.List;

@@ -1,5 +1,10 @@
 package ewm.category.service;
 
+import ewm.category.dto.CategoryDto;
+import ewm.category.dto.NewCategoryDto;
+import ewm.event.EventRepository;
+import ewm.exception.NotFoundException;
+import ewm.utils.LoggingUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -8,15 +13,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ewm.category.dto.CategoryDto;
-import ewm.category.dto.NewCategoryDto;
 import ewm.category.mapper.CategoryMapper;
 import ewm.category.model.Category;
 import ewm.category.repository.CategoryRepository;
-import ewm.event.EventRepository;
 import ewm.exception.ConflictException;
-import ewm.exception.NotFoundException;
-import static ewm.utils.LoggingUtils.logAndReturn;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,7 +41,7 @@ public class CategoryServiceImpl implements CategoryService {
                     newCategoryDto.getName()));
         }
         Category category = categoryMapper.toEntity(newCategoryDto);
-        return logAndReturn(
+        return LoggingUtils.logAndReturn(
                 categoryMapper.toDto(categoryRepository.save(category)),
                 savedCategory -> log.info("Category created successfully: {}", savedCategory)
         );
@@ -52,7 +52,7 @@ public class CategoryServiceImpl implements CategoryService {
     public List<CategoryDto> getCategories(int from, int size) {
         log.info("Fetching categories with from={} and size={}", from, size);
         Pageable page = PageRequest.of(from / size, size);
-        return logAndReturn(
+        return LoggingUtils.logAndReturn(
                 categoryRepository.findAll(page)
                         .stream()
                         .map(categoryMapper::toDto)
@@ -70,7 +70,7 @@ public class CategoryServiceImpl implements CategoryService {
                     log.error("Category with id={} not found", catId);
                     return new NotFoundException(String.format("Category with id=%d was not found", catId));
                 });
-        return logAndReturn(
+        return LoggingUtils.logAndReturn(
                 categoryMapper.toDto(category),
                 foundCategory -> log.info("Category found: {}", foundCategory)
         );
@@ -91,7 +91,7 @@ public class CategoryServiceImpl implements CategoryService {
                     categoryDto.getName()));
         }
         category.setName(categoryDto.getName());
-        return logAndReturn(
+        return LoggingUtils.logAndReturn(
                 categoryMapper.toDto(categoryRepository.save(category)),
                 updatedCategory -> log.info("Category updated successfully: {}", updatedCategory)
         );

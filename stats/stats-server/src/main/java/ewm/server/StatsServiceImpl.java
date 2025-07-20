@@ -1,5 +1,6 @@
 package ewm.server;
 
+import ewm.utils.LoggingUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -12,8 +13,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import static ewm.utils.LoggingUtils.logAndReturn;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -24,7 +23,7 @@ public class StatsServiceImpl implements StatsService {
     @Override
     @Transactional
     public EndpointHitDto saveHit(EndpointHitDto endpointHitDto) {
-        return logAndReturn(StatsMapper.mapToEndpointHitDto(
+        return LoggingUtils.logAndReturn(StatsMapper.mapToEndpointHitDto(
                         statsRepository.save(StatsMapper.mapToEndpointHit(endpointHitDto))),
                 savedEndpoint -> log.info("запрос c id = {} - cохранен", savedEndpoint.getId()));
     }
@@ -46,7 +45,7 @@ public class StatsServiceImpl implements StatsService {
             stats.forEach(stat -> log.info("Все просмотры для app={}, uri={}: {}",
                     stat.getApp(), stat.getUri(), stat.getHits()));
         }
-        return logAndReturn(stats, result -> log.info("Статистика собрана в количестве - {}",
+        return LoggingUtils.logAndReturn(stats, result -> log.info("Статистика собрана в количестве - {}",
                 result.size()));
     }
 }
