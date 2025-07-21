@@ -1,25 +1,24 @@
-version: '3.9'
 services:
-  stats-server:
-    build: stats/stats-server
-    image: stats-server
-    container_name: stats-server
-    ports:
-      - "9090:9090"
-    depends_on:
-      stats-db:
-        condition: service_healthy
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://stats-db:5432/statsDb
-      - SPRING_DATASOURCE_USERNAME=dbuser
-      - SPRING_DATASOURCE_PASSWORD=12345
-      - JAVA_TOOL_OPTIONS=-Duser.timezone=Europe/Moscow
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dbuser -d statsDb"]
-      interval: 10s
-      retries: 5
-    networks:
-      - app-network
+#  stats-server:
+#    build: stats/stats-server
+#    image: stats-server
+#    container_name: stats-server
+#    ports:
+#      - "9090:9090"
+#    depends_on:
+#      stats-db:
+#        condition: service_healthy
+#    environment:
+#      - SPRING_DATASOURCE_URL=jdbc:postgresql://stats-db:5432/statsDb
+#      - SPRING_DATASOURCE_USERNAME=dbuser
+#      - SPRING_DATASOURCE_PASSWORD=12345
+#      - JAVA_TOOL_OPTIONS=-Duser.timezone=Europe/Moscow
+#    healthcheck:
+#      test: ["CMD-SHELL", "pg_isready -U dbuser -d statsDb"]
+#      interval: 10s
+#      retries: 5
+#    networks:
+#      - app-network
 
   stats-db:
     image: postgres:16.1
@@ -39,26 +38,26 @@ services:
     networks:
       - app-network
 
-  ewm-service:
-    build: main-service
-    image: ewm-service
-    container_name: ewm-service
-    ports:
-      - "8080:8080"
-    depends_on:
-      ewm-db:
-        condition: service_healthy
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://ewm-db:5432/mainDb
-      - SPRING_DATASOURCE_USERNAME=dbuser
-      - SPRING_DATASOURCE_PASSWORD=12345
-      - JAVA_TOOL_OPTIONS=-Duser.timezone=Europe/Moscow
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dbuser -d mainDb"]
-      interval: 10s
-      retries: 5
-    networks:
-      - app-network
+#  ewm-service:
+#    build: main-service
+#    image: ewm-service
+#    container_name: ewm-service
+#    ports:
+#      - "8080:8080"
+#    depends_on:
+#      ewm-db:
+#        condition: service_healthy
+#    environment:
+#      - SPRING_DATASOURCE_URL=jdbc:postgresql://ewm-db:5432/mainDb
+#      - SPRING_DATASOURCE_USERNAME=dbuser
+#      - SPRING_DATASOURCE_PASSWORD=12345
+#      - JAVA_TOOL_OPTIONS=-Duser.timezone=Europe/Moscow
+#    healthcheck:
+#      test: ["CMD-SHELL", "pg_isready -U dbuser -d mainDb"]
+#      interval: 10s
+#      retries: 5
+#    networks:
+#      - app-network
 
   ewm-db:
     image: postgres:16.1
