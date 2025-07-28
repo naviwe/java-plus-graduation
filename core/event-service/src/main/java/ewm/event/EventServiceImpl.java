@@ -9,7 +9,7 @@ import ewm.interaction.dto.request.RequestStatus;
 import ewm.interaction.exception.ConflictException;
 import ewm.interaction.utils.CheckUserService;
 import ewm.utils.CheckCategoryService;
-import ewm.utils.CheckEventService;
+import ewm.utils.EventValidationService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -38,7 +38,7 @@ import static ewm.interaction.utils.LoggingUtils.logAndReturn;
 public class EventServiceImpl implements EventService {
     EventRepository eventRepository;
     CheckUserService checkUserService;
-    CheckEventService checkEventService;
+    EventValidationService checkEventService;
     EventMapper eventMapper;
     CheckCategoryService checkCategoryService;
     LocationRepository locationRepository;

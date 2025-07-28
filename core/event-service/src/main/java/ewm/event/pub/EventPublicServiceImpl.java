@@ -7,7 +7,7 @@ import ewm.interaction.dto.event.EventFullDto;
 import ewm.interaction.dto.event.EventShortDto;
 import ewm.interaction.dto.event.State;
 import ewm.interaction.exception.ValidationException;
-import ewm.utils.CheckEventService;
+import ewm.utils.EventValidationService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -33,7 +33,7 @@ public class EventPublicServiceImpl implements EventPublicService {
 
     private EventRepository eventRepository;
     private EventMapper eventMapper;
-    private CheckEventService checkEventService;
+    private EventValidationService checkEventService;
 
 
     private String app;
@@ -41,7 +41,7 @@ public class EventPublicServiceImpl implements EventPublicService {
 
     public EventPublicServiceImpl(EventRepository eventRepository,
                                   EventMapper eventMapper,
-                                  CheckEventService checkEventService,
+                                  EventValidationService checkEventService,
                                   @Value("${my.app}") String app,
                                   StatsClient client) {
         this.eventRepository = eventRepository;

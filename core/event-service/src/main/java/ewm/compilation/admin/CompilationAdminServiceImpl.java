@@ -7,7 +7,7 @@ import ewm.interaction.dto.event.CompilationDto;
 import ewm.interaction.dto.event.NewCompilationDto;
 import ewm.interaction.dto.event.UpdateCompilationRequest;
 import ewm.utils.CheckCompilationService;
-import ewm.utils.CheckEventService;
+import ewm.utils.EventValidationService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -24,7 +24,7 @@ public class CompilationAdminServiceImpl implements CompilationAdminService {
 
     CompilationMapper compilationMapper;
     CheckCompilationService checkCompilationService;
-    CheckEventService checkEventService;
+    EventValidationService checkEventService;
     CompilationRepository compilationRepository;
 
 

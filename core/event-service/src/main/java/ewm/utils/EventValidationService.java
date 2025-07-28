@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class CheckEventService {
+public class EventValidationService {
     private final EventRepository eventRepository;
 
     public Event checkEvent(Long eventId) {

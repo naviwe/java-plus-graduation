@@ -10,7 +10,7 @@ import ewm.interaction.exception.ConflictException;
 import ewm.interaction.exception.ForbiddenException;
 import ewm.interaction.utils.LoggingUtils;
 import ewm.utils.CheckCategoryService;
-import ewm.utils.CheckEventService;
+import ewm.utils.EventValidationService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -34,7 +34,7 @@ public class EventAdminServiceImpl implements EventAdminService {
     EventRepository eventRepository;
     EventMapper eventMapper;
     LocationRepository locationRepository;
-    CheckEventService checkEventService;
+    EventValidationService checkEventService;
     CheckCategoryService checkCategoryService;
 
     static LocalDateTime minTime = LocalDateTime.of(1970, 1, 1, 0, 0);
