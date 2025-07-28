@@ -1,11 +1,6 @@
 spring:
   cloud:
     gateway:
-      default-filters:
-        - name: CircuitBreaker
-          args:
-            name: myCircuitBreaker
-            fallbackUri: forward:/fallback
       routes:
         - id: user_service_admin
           uri: lb://user-service
@@ -13,7 +8,7 @@ spring:
             - Path=/admin/users/**
             - Method=POST,GET,DELETE
           filters:
-            - AddRequestHeader=X-Request-Origin, Gateway
+            - AddRequestHeader=X-Request-Origin,Gateway
             - Retry=3
         - id: main_service_admin
           uri: lb://main-service
@@ -21,27 +16,27 @@ spring:
             - Path=/admin/**
             - Method=POST,PATCH,DELETE,GET
           filters:
-            - AddRequestHeader=X-Request-Origin, Gateway
+            - AddRequestHeader=X-Request-Origin,Gateway
             - Retry=3
         - id: main_service_public
           uri: lb://main-service
           predicates:
             - Path=/categories/**,/compilations/**,/events/**,/users/**
           filters:
-            - AddRequestHeader=X-Request-Origin, Gateway
+            - AddRequestHeader=X-Request-Origin,Gateway
         - id: main_service_comments_public
           uri: lb://main-service
           predicates:
             - Path=/events/*/comments/**
           filters:
-            - AddRequestHeader=X-Request-Origin, Gateway
+            - AddRequestHeader=X-Request-Origin,Gateway
         - id: main_service_comments_private
           uri: lb://main-service
           predicates:
             - Path=/users/*/events/*/comments/**
             - Method=POST,PATCH,DELETE
           filters:
-            - AddRequestHeader=X-Request-Origin, Gateway
+            - AddRequestHeader=X-Request-Origin,Gateway
 server:
   port: 8080
 logging:
