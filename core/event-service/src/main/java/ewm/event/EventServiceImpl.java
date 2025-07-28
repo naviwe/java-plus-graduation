@@ -7,6 +7,7 @@ import ewm.interaction.dto.request.EventRequestStatusUpdateResult;
 import ewm.interaction.dto.request.ParticipationRequestDto;
 import ewm.interaction.dto.request.RequestStatus;
 import ewm.interaction.exception.ConflictException;
+import ewm.interaction.exception.ForbiddenException;
 import ewm.interaction.utils.CheckUserService;
 import ewm.utils.CheckCategoryService;
 import ewm.utils.EventValidationService;
@@ -95,11 +96,11 @@ public class EventServiceImpl implements EventService {
         checkUserService.checkUser(userId);
         Event event = checkEventService.checkEvent(eventId);
         if (!event.getInitiatorId().equals(userId)) {
-            throw new ConflictException(String.format("User with id=%d isn't an initiator for event with id=%d",
-                    userId, eventId));
+            throw new ForbiddenException("Only event initiator can update the event");
         }
+
         if (event.getState() == State.PUBLISHED) {
-            throw new ConflictException("Only pending or canceled events can be changed");
+            throw new ConflictException("Published events cannot be modified");
         }
         if (updateEventRequest.getAnnotation() != null) {
             event.setAnnotation(updateEventRequest.getAnnotation());

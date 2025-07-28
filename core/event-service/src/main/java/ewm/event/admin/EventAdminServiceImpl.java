@@ -8,6 +8,7 @@ import ewm.interaction.dto.event.StateAction;
 import ewm.interaction.dto.event.UpdateEventRequest;
 import ewm.interaction.exception.ConflictException;
 import ewm.interaction.exception.ForbiddenException;
+import ewm.interaction.exception.ValidationException;
 import ewm.interaction.utils.LoggingUtils;
 import ewm.utils.CheckCategoryService;
 import ewm.utils.EventValidationService;
@@ -68,6 +69,12 @@ public class EventAdminServiceImpl implements EventAdminService {
         }
         Event event = checkEventService.checkEvent(eventId);
 
+        if (updateEventRequest.getEventDate() != null) {
+            LocalDateTime newEventDate = LocalDateTime.parse(updateEventRequest.getEventDate(), formatter);
+            if (newEventDate.isBefore(LocalDateTime.now().plusHours(2))) {
+                throw new ValidationException("Event date must be at least 2 hours in the future");
+            }
+        }
         if (event.getState().equals(State.PUBLISHED) || event.getState().equals(State.CANCELED)) {
             throw new ConflictException("Only pending events can be published");
         }

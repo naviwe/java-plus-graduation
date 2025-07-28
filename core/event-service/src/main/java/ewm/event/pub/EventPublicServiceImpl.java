@@ -56,15 +56,22 @@ public class EventPublicServiceImpl implements EventPublicService {
     static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
 
-
     @Override
     public List<EventShortDto> getEvents(String text, List<Long> categories, Boolean paid,
                                          String rangeStart, String rangeEnd, Boolean onlyAvailable,
                                          String sort, Integer from, Integer size, HttpServletRequest request) {
         Pageable pageable = PageRequest.of(from / size, size);
 
-        LocalDateTime start = rangeStart != null ? LocalDateTime.parse(rangeStart, formatter) : minTime;
-        LocalDateTime end = rangeEnd != null ? LocalDateTime.parse(rangeEnd, formatter) : maxTime;
+        if (from < 0 || size <= 0) {
+            throw new ValidationException("Invalid pagination parameters");
+        }
+
+        LocalDateTime start = rangeStart != null ?
+                LocalDateTime.parse(rangeStart, formatter) :
+                LocalDateTime.now();
+        LocalDateTime end = rangeEnd != null ?
+                LocalDateTime.parse(rangeEnd, formatter) :
+                start.plusYears(1);
         text = text != null ? text : "";
         Page<Event> events = eventRepository.findEvents(text, paid, start, end, categories, onlyAvailable,
                 State.PUBLISHED, pageable);
