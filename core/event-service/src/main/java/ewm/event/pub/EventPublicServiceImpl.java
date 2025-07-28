@@ -6,6 +6,7 @@ import ewm.event.mapper.EventMapper;
 import ewm.interaction.dto.event.EventFullDto;
 import ewm.interaction.dto.event.EventShortDto;
 import ewm.interaction.dto.event.State;
+import ewm.interaction.exception.NotFoundException;
 import ewm.interaction.exception.ValidationException;
 import ewm.utils.EventValidationService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -118,10 +119,18 @@ public class EventPublicServiceImpl implements EventPublicService {
 
     @Override
     public EventFullDto getEventById(Long id, HttpServletRequest request) {
-        EventFullDto eventFullDto = eventMapper.toFullDto(checkEventService.checkPublishedEvent(id));
+        Event event = eventRepository.findByIdAndState(id, State.PUBLISHED)
+                .orElseThrow(() -> new NotFoundException("Event with id=" + id + " was not found or not published"));
+
         hitStats(request);
-        eventFullDto.setViews(getStats(request).getFirst().getHits());
-        return eventFullDto;
+
+        List<StatsDto> stats = getStats(request);
+        long views = stats.isEmpty() ? 0 : stats.getFirst().getHits();
+
+        EventFullDto dto = eventMapper.toFullDto(event);
+        dto.setViews(views);
+
+        return dto;
     }
 
     private void hitStats(HttpServletRequest request) {

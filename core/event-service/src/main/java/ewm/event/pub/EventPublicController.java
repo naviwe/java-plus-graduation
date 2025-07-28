@@ -2,12 +2,14 @@ package ewm.event.pub;
 
 import ewm.interaction.dto.event.EventFullDto;
 import ewm.interaction.dto.event.EventShortDto;
+import ewm.interaction.exception.ErrorResponse;
 import ewm.interaction.exception.NotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,14 +42,14 @@ public class EventPublicController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<EventFullDto> getEventById(@PathVariable Long id, HttpServletRequest request) {
+    public ResponseEntity<?> getEventById(@PathVariable Long id, HttpServletRequest request) {
         try {
             EventFullDto event = eventPublicService.getEventById(id, request);
             return ResponseEntity.ok(event);
         } catch (NotFoundException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ErrorResponse("Событие не найдено или не опубликовано",
+                            "Event with id=" + id, e.getMessage()));
         }
     }
-
-
 }
