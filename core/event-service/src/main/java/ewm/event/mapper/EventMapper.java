@@ -28,6 +28,7 @@ public abstract class EventMapper {
     @Mapping(target = "initiator", expression = "java(getUserShortDto(event.getInitiatorId()))")
     @Mapping(target = "location", source = "location")
     @Mapping(target = "eventDate", source = "eventDate")
+    @Mapping(target = "publishedOn", source = "publishedOn", dateFormat = "yyyy-MM-dd HH:mm:ss")
     public abstract EventFullDto toFullDto(Event event);
 
     @Mapping(target = "category", source = "category", qualifiedByName = "mapCategory")

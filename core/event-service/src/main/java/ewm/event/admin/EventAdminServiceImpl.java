@@ -46,19 +46,25 @@ public class EventAdminServiceImpl implements EventAdminService {
     public List<EventFullDto> getEvents(List<Long> users, List<String> statesStr,
                                         List<Long> categories, String rangeStart,
                                         String rangeEnd, Integer from, Integer size) {
+        LocalDateTime start = rangeStart != null ?
+                LocalDateTime.parse(rangeStart, formatter) : minTime;
+        LocalDateTime end = rangeEnd != null ?
+                LocalDateTime.parse(rangeEnd, formatter) : maxTime;
 
-        LocalDateTime start = rangeStart != null ? LocalDateTime.parse(rangeStart, formatter) :
-                minTime;
-        LocalDateTime end = rangeEnd != null ? LocalDateTime.parse(rangeEnd, formatter) :
-                maxTime;
-
-        List<State> states = statesStr != null ? statesStr.stream().map(State::valueOf).toList() : null;
+        List<State> states = statesStr != null ?
+                statesStr.stream().map(State::valueOf).toList() : null;
 
         Pageable pageable = PageRequest.of(from / size, size);
-        return eventRepository.findAllEventsByAdmin(users, states,
-                categories, start,
-                end, pageable).stream().map(eventMapper::toFullDto).toList();
-
+        return eventRepository.findAllEventsByAdmin(users, states, categories,
+                        start, end, pageable)
+                .stream()
+                .peek(event -> {
+                    if (event.getState() == State.PUBLISHED && event.getPublishedOn() == null) {
+                        event.setPublishedOn(event.getCreatedOn());
+                    }
+                })
+                .map(eventMapper::toFullDto)
+                .toList();
     }
 
     @Override
@@ -69,22 +75,21 @@ public class EventAdminServiceImpl implements EventAdminService {
         }
         Event event = checkEventService.checkEvent(eventId);
 
+        if (updateEventRequest.getStateAction() != null
+                && updateEventRequest.getStateAction().equals(StateAction.PUBLISH_EVENT)) {
+            if (event.getState().equals(State.PUBLISHED) || event.getState().equals(State.CANCELED)) {
+                throw new ConflictException("Only pending events can be published");
+            }
+            event.setState(State.PUBLISHED);
+            event.setPublishedOn(LocalDateTime.now());
+        }
+
         if (updateEventRequest.getEventDate() != null) {
             LocalDateTime newEventDate = LocalDateTime.parse(updateEventRequest.getEventDate(), formatter);
             if (newEventDate.isBefore(LocalDateTime.now().plusHours(2))) {
                 throw new ValidationException("Event date must be at least 2 hours in the future");
             }
-        }
-        if (event.getState().equals(State.PUBLISHED) || event.getState().equals(State.CANCELED)) {
-            throw new ConflictException("Only pending events can be published");
-        }
-
-        if (updateEventRequest.getStateAction() != null) {
-            if (updateEventRequest.getStateAction().equals(StateAction.PUBLISH_EVENT)) {
-                event.setState(State.PUBLISHED);
-            } else {
-                throw new ForbiddenException("Cannot publish the event because it's not in the right state: PUBLISHED");
-            }
+            event.setEventDate(newEventDate);
         }
         if (updateEventRequest.getAnnotation() != null) {
             event.setAnnotation(updateEventRequest.getAnnotation());
