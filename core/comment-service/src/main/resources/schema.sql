@@ -6,5 +6,5 @@ CREATE TABLE IF NOT EXISTS comments (
     created timestamp NOT NULL,
     updated timestamp NOT NULL,
     updated_by VARCHAR(5) NOT NULL,
-    CONSTRAINT pk_comments PRIMARY KEY (id),
+    CONSTRAINT pk_comments PRIMARY KEY (id)
     );
