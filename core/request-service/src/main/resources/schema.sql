@@ -3,6 +3,6 @@ CREATE TABLE IF NOT EXISTS requests (
     event_id BIGINT NOT NULL,
     requester_id BIGINT NOT NULL,
     status VARCHAR(10) NOT NULL,
-    created timestamp NOT NULL,
+    created TIMESTAMP NOT NULL,
     CONSTRAINT pk_requests PRIMARY KEY (id)
-)
+);
