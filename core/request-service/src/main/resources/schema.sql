@@ -4,5 +4,5 @@ CREATE TABLE IF NOT EXISTS requests (
     requester_id BIGINT NOT NULL,
     status VARCHAR(10) NOT NULL,
     created timestamp NOT NULL,
-    CONSTRAINT pk_requests PRIMARY KEY (id),
-    );
+    CONSTRAINT pk_requests PRIMARY KEY (id)
+)
