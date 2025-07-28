@@ -11,7 +11,6 @@ import ewm.event.Event;
 import ewm.event.EventRepository;
 import ewm.event.State;
 import ewm.exception.ConflictException;
-import ewm.user.User;
 import ewm.utils.CheckRequestService;
 import ewm.utils.CheckUserService;
 import ewm.utils.CheckEventService;
@@ -47,24 +46,21 @@ public class RequestServiceImpl implements RequestService {
     @Override
     @Transactional
     public ParticipationRequestDto saveRequest(Long userId, Long eventId) {
-        User requester = checkUserService.checkUser(userId);
+        checkUserService.checkUser(userId);
         Event event = checkEventService.checkEvent(eventId);
-        checksBeforeSave(requester, event);
-        RequestStatus status = event.getRequestModeration() ? RequestStatus.PENDING : RequestStatus.CONFIRMED;
-        if (event.getParticipantLimit() == 0) {
-            status = RequestStatus.CONFIRMED;
-        } else {
-            if (event.getParticipantLimit() - event.getConfirmedRequests() == 0) {
-                throw new ConflictException("Достигнут лимит участников события");
-            }
-        }
+        checksBeforeSave(userId, event);
+
+        RequestStatus status = determineRequestStatus(event);
+
+        Request request = Request.builder()
+                .requesterId(userId)
+                .event(event)
+                .created(LocalDateTime.now())
+                .status(status)
+                .build();
+
         ParticipationRequestDto dto = logAndReturn(
-                requestMapper.toDto(requestRepository.save(Request.builder()
-                        .requester(requester)
-                        .event(event)
-                        .created(LocalDateTime.now())
-                        .status(status)
-                        .build())),
+                requestMapper.toDto(requestRepository.save(request)),
                 savedRequest -> log.info("{} request created successfully: {}",
                         savedRequest.getStatus(), savedRequest)
         );
@@ -81,7 +77,7 @@ public class RequestServiceImpl implements RequestService {
     @Transactional
     public ParticipationRequestDto cancelRequest(Long userId, Long requestId) {
         Request request = checkRequestService.checkRequest(requestId);
-        checksBeforeCancel(checkUserService.checkUser(userId), request);
+        checksBeforeCancel(userId, request);
         request.setStatus(RequestStatus.CANCELED);
         return logAndReturn(
                 requestMapper.toDto(requestRepository.save(request)),
@@ -89,14 +85,24 @@ public class RequestServiceImpl implements RequestService {
         );
     }
 
-    private void checksBeforeSave(User requester, Event event) {
-        if (requestRepository.existsByRequesterIdAndEventId(requester.getId(), event.getId())) {
-            throw new ConflictException(String.format("Request from user with id=%d for event with id=%d already exists",
-                    requester.getId(), event.getId()));
+    private RequestStatus determineRequestStatus(Event event) {
+        if (!event.getRequestModeration() || event.getParticipantLimit() == 0) {
+            return RequestStatus.CONFIRMED;
         }
-        if (requester.getId().equals(event.getInitiator().getId())) {
+        if (event.getParticipantLimit() - event.getConfirmedRequests() == 0) {
+            throw new ConflictException("Достигнут лимит участников события");
+        }
+        return RequestStatus.PENDING;
+    }
+
+    private void checksBeforeSave(Long requesterId, Event event) {
+        if (requestRepository.existsByRequesterIdAndEventId(requesterId, event.getId())) {
+            throw new ConflictException(String.format("Request from user with id=%d for event with id=%d already exists",
+                    requesterId, event.getId()));
+        }
+        if (requesterId.equals(event.getInitiatorId())) {
             throw new ConflictException(String.format("User with id=%d cannot request their own event with id=%d",
-                    requester.getId(), event.getId()));
+                    requesterId, event.getId()));
         }
         if (!event.getState().equals(State.PUBLISHED)) {
             throw new ConflictException(String.format("Cannot participate in unpublished event with id=%d",
@@ -107,10 +113,10 @@ public class RequestServiceImpl implements RequestService {
         }
     }
 
-    private void checksBeforeCancel(User user, Request request) {
-        if (!request.getRequester().getId().equals(user.getId())) {
+    private void checksBeforeCancel(Long userId, Request request) {
+        if (!request.getRequesterId().equals(userId)) {
             throw new ConflictException(String.format("User with id=%d cannot cancel request with id=%d that does not belong to them",
-                    user.getId(), request.getId()));
+                    userId, request.getId()));
         }
         if (request.getStatus() == RequestStatus.CANCELED) {
             throw new ConflictException(String.format("Request with id=%d is already canceled", request.getId()));

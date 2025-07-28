@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import ewm.event.Event;
-import ewm.user.User;
 
 import java.time.LocalDateTime;
 
@@ -14,7 +13,7 @@ import java.time.LocalDateTime;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "requests", schema = "public")
-@EqualsAndHashCode(of = { "event", "requester" })
+@EqualsAndHashCode(of = {"event", "requesterId"})
 @Getter
 @Setter
 @ToString
@@ -32,10 +31,8 @@ public class Request {
     @ToString.Exclude
     Event event;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "requester_id", nullable = false)
-    @ToString.Exclude
-    User requester;
+    @Column(name = "requester_id", nullable = false)
+    Long requesterId;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)

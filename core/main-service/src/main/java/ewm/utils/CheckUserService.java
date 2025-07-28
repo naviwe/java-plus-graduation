@@ -1,21 +1,24 @@
 package ewm.utils;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import ewm.client.UserFeignClient;
 import ewm.exception.NotFoundException;
-import ewm.user.User;
-import ewm.user.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
+import java.util.List;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CheckUserService {
-    private final UserRepository userRepository;
 
-    public User checkUser(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(String.format("User with id=%d was not found", userId)));
+    private final UserFeignClient userFeignClient;
+
+    public long checkUser(Long userId) {
+        try {
+            userFeignClient.getUsers(List.of(userId), 0, 1);
+        } catch (Exception e) {
+            throw new NotFoundException("User with id=" + userId + " not found");
+        }
+        return userId;
     }
 }

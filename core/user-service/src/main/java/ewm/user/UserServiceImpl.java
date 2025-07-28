@@ -1,6 +1,7 @@
 package ewm.user;
 
-import ewm.user.dto.UserDto;
+import ewm.dto.UserDto;
+import ewm.dto.UserShortDto;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -10,7 +11,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ewm.exception.NotFoundException;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -58,5 +62,20 @@ public class UserServiceImpl implements UserService {
                     return new NotFoundException(String.format("User with id=%d was not found", userId));
                 }));
         log.info("User with id={} successfully deleted", userId);
+    }
+
+    @Override
+    public Map<Long, UserShortDto> getMapUsers(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            log.info("Невозможно получить пользователей. Список ids пользвателей пуст");
+            return Collections.emptyMap();
+        }
+
+        return userRepository.findAllById(ids)
+                .stream()
+                .collect(Collectors.toMap(
+                        User::getId,
+                        userMapper::toShortDto
+                ));
     }
 }

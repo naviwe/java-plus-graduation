@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import ewm.category.model.Category;
-import ewm.user.User;
 
 import java.time.LocalDateTime;
 
@@ -60,10 +59,8 @@ public class Event {
     @Column(nullable = false, columnDefinition = "BIGINT DEFAULT 0")
     Long views;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "initiator_id", nullable = false)
-    @ToString.Exclude
-    User initiator;
+    @Column(name = "initiator_id", nullable = false)
+    Long initiatorId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)

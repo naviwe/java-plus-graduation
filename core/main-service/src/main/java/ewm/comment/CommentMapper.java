@@ -12,9 +12,10 @@ import java.time.LocalDateTime;
 public interface CommentMapper {
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "authorId", ignore = true)
     Comment toEntity(CommentCreateDto commentCreateDto);
 
-    @Mapping(target = "author", source = "author.id")
+    @Mapping(target = "author", source = "authorId")
     @Mapping(target = "event", source = "event.id")
     @Mapping(target = "timestamp", source = "comment", qualifiedByName = "mapTimestamp")
     @Mapping(target = "updated", source = "comment", qualifiedByName = "mapUpdated")

@@ -1,9 +1,9 @@
 package ewm.user;
 
-import ewm.user.dto.UserDto;
+import ewm.dto.UserDto;
+import ewm.dto.UserShortDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import ewm.user.dto.UserShortDto;
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {

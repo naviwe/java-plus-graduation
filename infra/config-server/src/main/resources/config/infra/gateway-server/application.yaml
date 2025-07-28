@@ -2,12 +2,36 @@ spring:
   cloud:
     gateway:
       routes:
-        - id: main_service_route
-          uri: lb://main-service
-
+        # User Service Routes
+        - id: user_service_admin
+          uri: lb://user-service
           predicates:
-            - Path=/**
+            - Path=/admin/users/**
+            - Method=POST,GET,DELETE
 
+        # Main Service Routes (все остальные пути)
+        - id: main_service_admin
+          uri: lb://main-service
+          predicates:
+            - Path=/admin/**
+            - Method=POST,PATCH,DELETE,GET
+
+        - id: main_service_public
+          uri: lb://main-service
+          predicates:
+            - Path=/categories/**,/compilations/**,/events/**,/users/**
+
+        # Специфичные маршруты для комментариев
+        - id: main_service_comments_public
+          uri: lb://main-service
+          predicates:
+            - Path=/events/*/comments/**
+
+        - id: main_service_comments_private
+          uri: lb://main-service
+          predicates:
+            - Path=/users/*/events/*/comments/**
+            - Method=POST,PATCH,DELETE
 server:
   port: 8080
 logging:

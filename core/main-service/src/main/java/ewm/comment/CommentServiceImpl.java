@@ -50,7 +50,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public CommentDto getComment(Long commentId,Long eventId) {
+    public CommentDto getComment(Long commentId, Long eventId) {
         Comment comment = checkCommentService.checkComment(commentId);
         Event event = checkEventService.checkEvent(eventId);
         if (!comment.getEvent().getId().equals(event.getId())) {
@@ -65,12 +65,15 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional
     public CommentDto createComment(CommentCreateDto commentCreateDto, Long userId, Long eventId) {
+        // Проверяем существование пользователя
+        checkUserService.checkUser(userId);
+
         return logAndReturn(commentMapper.toDto(commentRepository.save(Comment.builder()
                         .text(commentCreateDto.getText())
                         .created(commentCreateDto.getCreated())
                         .updated(commentCreateDto.getUpdated())
                         .updatedBy(commentCreateDto.getUpdatedBy())
-                        .author(checkUserService.checkUser(userId))
+                        .authorId(userId) // Устанавливаем authorId вместо User
                         .event(checkEventService.checkEvent(eventId))
                         .build())),
                 savedComment -> log.info("Comment created successfully: {}",
@@ -101,7 +104,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public CommentDto updateCommentByUser(Long commentId, Long userId, Long eventId,CommentUpdateDto updateDto) {
+    public CommentDto updateCommentByUser(Long commentId, Long userId, Long eventId, CommentUpdateDto updateDto) {
         Comment comment = checkCommentService.checkComment(commentId);
         Event event = checkEventService.checkEvent(eventId);
         if (!comment.getEvent().getId().equals(event.getId())) {
@@ -119,7 +122,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public void deleteCommentByUser(Long commentId, Long userId,Long eventId) {
+    public void deleteCommentByUser(Long commentId, Long userId, Long eventId) {
         Comment comment = checkCommentService.checkComment(commentId);
         checkUserIsAuthor(comment, userId);
         Event event = checkEventService.checkEvent(eventId);
@@ -132,7 +135,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     private void checkUserIsAuthor(Comment comment, Long userId) {
-        if (!comment.getAuthor().getId().equals(userId)) {
+        if (!comment.getAuthorId().equals(userId)) { // Теперь сравниваем authorId
             throw new ForbiddenException("User " + userId + " is not author of comment " + comment.getId());
         }
     }

@@ -1,7 +1,8 @@
 package ewm.user;
 
 
-import ewm.user.dto.UserDto;
+import ewm.dto.UserDto;
+import ewm.dto.UserShortDto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -41,5 +43,9 @@ public class UserController {
         userService.deleteUser(userId);
     }
 
+    @GetMapping("/mapped")
+    public Map<Long, UserShortDto> getUsersByIDS(@RequestParam List<Long> ids) {
+        return userService.getMapUsers(ids);
+    }
 
 }

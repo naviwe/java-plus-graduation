@@ -67,26 +67,29 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventFullDto findById(Long userId, Long eventId) {
         checkUserService.checkUser(userId);
-        if (!eventRepository.findByInitiatorId(userId).equals(eventRepository.findById(eventId).get())) {
-            throw new ConflictException(String.format("User with id=%d isnt a initiator for event with id=%d",
+
+        Event event = checkEventService.checkEvent(eventId);
+
+        if (!event.getInitiatorId().equals(userId)) {
+            throw new ConflictException(String.format(
+                    "User with id=%d isn't an initiator for event with id=%d",
                     userId, eventId));
         }
-        return logAndReturn(eventMapper.toFullDto(checkEventService.checkEvent(eventId)),
-                event -> log.info("Found event with id={}",
-                        event.getId())
-        );
+
+        return logAndReturn(eventMapper.toFullDto(event),
+                e -> log.info("Found event with id={}", eventId));
     }
 
     @Override
     @Transactional
     public EventFullDto saveEvent(NewEventDto newEventDto, Long userId) {
-        Event event = eventMapper.toEvent(newEventDto);
+        Event event = eventMapper.toEvent(newEventDto, userId);
         Location location = event.getLocation();
         if (location != null) {
             location = locationRepository.save(location);
             event.setLocation(location);
         }
-        event.setInitiator(checkUserService.checkUser(userId));
+        event.setInitiatorId(checkUserService.checkUser(userId));
         event.setCategory(checkCategoryService.checkCategory(newEventDto.getCategory()));
         event.setCreatedOn(LocalDateTime.now());
         event.setState(State.PENDING);
@@ -102,7 +105,7 @@ public class EventServiceImpl implements EventService {
     public EventFullDto updateEvent(UpdateEventRequest updateEventRequest, Long userId, Long eventId) {
         checkUserService.checkUser(userId);
         Event event = checkEventService.checkEvent(eventId);
-        if (!event.getInitiator().getId().equals(userId)) {
+        if (!event.getInitiatorId().equals(userId)) {
             throw new ConflictException(String.format("User with id=%d isnt a initiator for event with id=%d",
                     userId, eventId));
         }
@@ -165,7 +168,7 @@ public class EventServiceImpl implements EventService {
     public List<ParticipationRequestDto> findRequestsByEventId(Long userId, Long eventId) {
         checkUserService.checkUser(userId);
         Event event = checkEventService.checkEvent(eventId);
-        if (!event.getInitiator().getId().equals(userId)) {
+        if (!event.getInitiatorId().equals(userId)) {
             throw new ConflictException(String.format(
                     "User with id=%d isn't an initiator for event with id=%d", userId, eventId));
         }
@@ -181,7 +184,7 @@ public class EventServiceImpl implements EventService {
                                                               Long eventId) {
         checkUserService.checkUser(userId);
         Event event = checkEventService.checkEvent(eventId);
-        if (!event.getInitiator().getId().equals(userId)) {
+        if (!event.getInitiatorId().equals(userId)) {
             throw new ConflictException(String.format("User with id=%d isn't an initiator for event with id=%d", userId,
                     eventId));
         }

@@ -10,7 +10,7 @@ import java.util.List;
 public interface RequestMapper {
 
     @Mapping(target = "event", source = "event.id")
-    @Mapping(target = "requester", source = "requester.id")
+    @Mapping(target = "requester", source = "requesterId")
     @Mapping(target = "created", source = "created")
     ParticipationRequestDto toDto(Request request);
 

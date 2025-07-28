@@ -12,24 +12,21 @@ import java.util.List;
 import java.util.Optional;
 
 public interface EventRepository extends JpaRepository<Event, Long> {
-    Page<Event> findByInitiatorId(Long userId, Pageable pageable);
-
-    Event findByInitiatorId(Long userId);
+    Page<Event> findByInitiatorId(Long initiatorId, Pageable pageable);
 
 
-    @EntityGraph(attributePaths = {"initiator", "category"})
+    @EntityGraph(attributePaths = {"category"})
     @Query("SELECT e FROM Event e " +
-            "WHERE (:users IS NULL OR e.initiator.id IN :users) " +
+            "WHERE (:users IS NULL OR e.initiatorId IN :users) " +
             "AND (:states IS NULL OR e.state IN :states) " +
             "AND (:categories IS NULL OR e.category.id IN :categories) " +
             "AND e.eventDate > :rangeStart " +
             "AND e.eventDate < :rangeEnd ")
     Page<Event> findAllEventsByAdmin(@Param("users") List<Long> users, @Param("states") List<State> states,
-                           @Param("categories") List<Long> categories,
-                           @Param("rangeStart") LocalDateTime rangeStart,
-                           @Param("rangeEnd") LocalDateTime end,
-                           Pageable pageable);
-
+                                     @Param("categories") List<Long> categories,
+                                     @Param("rangeStart") LocalDateTime rangeStart,
+                                     @Param("rangeEnd") LocalDateTime end,
+                                     Pageable pageable);
 
     @EntityGraph(attributePaths = {"category"})
     @Query("SELECT e FROM Event e " +
@@ -49,8 +46,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
                            @Param("state") State state,
                            Pageable pageable);
 
-    Optional<Event> findByIdAndState(Long id,State state);
+    Optional<Event> findByIdAndState(Long id, State state);
 
     Boolean existsByCategoryId(Long catId);
-
 }
