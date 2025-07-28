@@ -1,7 +1,7 @@
 package ewm.user;
 
-import ewm.dto.UserDto;
-import ewm.dto.UserShortDto;
+import ewm.interaction.dto.user.UserDto;
+import ewm.interaction.dto.user.UserShortDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

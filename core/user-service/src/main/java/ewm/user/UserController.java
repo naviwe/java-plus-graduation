@@ -1,8 +1,7 @@
 package ewm.user;
 
-
-import ewm.dto.UserDto;
-import ewm.dto.UserShortDto;
+import ewm.interaction.dto.user.UserDto;
+import ewm.interaction.dto.user.UserShortDto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;

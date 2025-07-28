@@ -1,7 +1,8 @@
 package ewm.user;
 
-import ewm.dto.UserDto;
-import ewm.dto.UserShortDto;
+import ewm.interaction.dto.user.UserDto;
+import ewm.interaction.dto.user.UserShortDto;
+import ewm.interaction.exception.NotFoundException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -9,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import ewm.exception.NotFoundException;
 
 import java.util.Collections;
 import java.util.List;
