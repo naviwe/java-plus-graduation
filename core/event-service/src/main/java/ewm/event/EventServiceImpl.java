@@ -75,7 +75,7 @@ public class EventServiceImpl implements EventService {
     @Transactional
     public EventFullDto saveEvent(NewEventDto newEventDto, Long userId) {
         Event event = eventMapper.toEvent(newEventDto, userId);
-        
+
         if (newEventDto.getLocation() != null) {
             Location location = locationRepository.findByLatAndLon(
                     newEventDto.getLocation().getLat(),
