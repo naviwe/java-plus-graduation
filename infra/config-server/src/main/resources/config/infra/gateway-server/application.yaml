@@ -11,7 +11,7 @@ spring:
             - AddRequestHeader=X-Request-Origin,Gateway
             - Retry=3
         - id: main_service_admin
-          uri: lb://main-service
+          uri: lb://event-service
           predicates:
             - Path=/admin/**
             - Method=POST,PATCH,DELETE,GET
@@ -19,34 +19,42 @@ spring:
             - AddRequestHeader=X-Request-Origin,Gateway
             - Retry=3
         - id: main_service_public
-          uri: lb://main-service
+          uri: lb://event-service
           predicates:
-            - Path=/categories/**,/compilations/**,/events/**,/users/**
+            - Path=/categories/**,/compilations/**,/events/**
           filters:
             - AddRequestHeader=X-Request-Origin,Gateway
+            - Retry=3
         - id: main_service_comments_public
-          uri: lb://main-service
+          uri: lb://comment-service
           predicates:
             - Path=/events/*/comments/**
           filters:
             - AddRequestHeader=X-Request-Origin,Gateway
+            - Retry=3
         - id: main_service_comments_private
-          uri: lb://main-service
+          uri: lb://comment-service
           predicates:
             - Path=/users/*/events/*/comments/**
             - Method=POST,PATCH,DELETE
           filters:
             - AddRequestHeader=X-Request-Origin,Gateway
+            - Retry=3
+        - id: request_service_private
+          uri: lb://request-service
+          predicates:
+            - Path=/users/*/requests/**
+          filters:
+            - AddRequestHeader=X-Request-Origin,Gateway
+            - Retry=3
+
 server:
   port: 8080
+
 logging:
   level:
     root: INFO
-
     org.springframework.cloud.gateway: TRACE
-
     reactor.netty.http.client: TRACE
-
     reactor.netty.http.server: DEBUG
-
     org.springframework.cloud.gateway.route.RouteDefinitionLocator: TRACE
