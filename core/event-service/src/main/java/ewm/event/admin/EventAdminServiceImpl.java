@@ -16,6 +16,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -46,18 +47,22 @@ public class EventAdminServiceImpl implements EventAdminService {
     public List<EventFullDto> getEvents(List<Long> users, List<String> statesStr,
                                         List<Long> categories, String rangeStart,
                                         String rangeEnd, Integer from, Integer size) {
-        LocalDateTime start = rangeStart != null ?
+        LocalDateTime start = rangeStart != null && !rangeStart.isEmpty() ?
                 LocalDateTime.parse(rangeStart, formatter) : minTime;
-        LocalDateTime end = rangeEnd != null ?
+        LocalDateTime end = rangeEnd != null && !rangeEnd.isEmpty() ?
                 LocalDateTime.parse(rangeEnd, formatter) : maxTime;
 
         List<State> states = statesStr != null ?
                 statesStr.stream().map(State::valueOf).toList() : null;
 
         Pageable pageable = PageRequest.of(from / size, size);
-        return eventRepository.findAllEventsByAdmin(users, states, categories,
-                        start, end, pageable)
-                .stream()
+        Page<Event> eventPage = eventRepository.findAllEventsByAdmin(users, states, categories, start, end, pageable);
+        List<Event> events = eventPage.getContent();
+
+        log.info("Found {} events for users={}, states={}, categories={}, rangeStart={}, rangeEnd={}",
+                events.size(), users, states, categories, start, end);
+
+        return events.stream()
                 .peek(event -> {
                     if (event.getState() == State.PUBLISHED && event.getPublishedOn() == null) {
                         event.setPublishedOn(event.getCreatedOn());

@@ -67,54 +67,52 @@ public class EventPublicServiceImpl implements EventPublicService {
             throw new ValidationException("Invalid pagination parameters");
         }
 
-        LocalDateTime start = rangeStart != null ?
-                LocalDateTime.parse(rangeStart, formatter) :
-                LocalDateTime.now();
-        LocalDateTime end = rangeEnd != null ?
-                LocalDateTime.parse(rangeEnd, formatter) :
-                start.plusYears(1);
-        text = text != null ? text : "";
+        LocalDateTime start = rangeStart != null && !rangeStart.isEmpty() ?
+                LocalDateTime.parse(rangeStart, formatter) : LocalDateTime.now();
+        LocalDateTime end = rangeEnd != null && !rangeEnd.isEmpty() ?
+                LocalDateTime.parse(rangeEnd, formatter) : maxTime;
+        text = text != null ? text.toLowerCase() : "";
+
         Page<Event> events = eventRepository.findEvents(text, paid, start, end, categories, onlyAvailable,
                 State.PUBLISHED, pageable);
-        List<EventShortDto> dtos = events.map(eventMapper::toShortDto).toList();
+        List<EventShortDto> dtos = events.getContent().stream()
+                .map(eventMapper::toShortDto)
+                .collect(Collectors.toList());
 
-        if (sort != null) {
-            dtos = events.stream()
-                    .sorted((event1, event2) -> {
+        if (!dtos.isEmpty() && sort != null) {
+            dtos = dtos.stream()
+                    .sorted((dto1, dto2) -> {
                         if (sort.equals("EVENT_DATE")) {
-                            if (event1.getEventDate().isBefore(event2.getEventDate()))
-                                return -1;
-                            else
-                                return 1;
+                            return dto1.getEventDate().compareTo(dto2.getEventDate());
                         } else if (sort.equals("VIEWS")) {
-                            return (int) (event2.getViews() - event1.getViews());
+                            return Long.compare(dto2.getViews(), dto1.getViews());
                         }
-                        return 1;
+                        return 0;
                     })
-                    .map(eventMapper::toShortDto)
-                    .toList();
+                    .collect(Collectors.toList());
         }
 
         hitStats(request);
 
-        List<String> uris = dtos.stream()
-                .map(dto -> request.getRequestURI() + "/" + dto.getId())
-                .collect(Collectors.toList());
+        if (!dtos.isEmpty()) {
+            List<String> uris = dtos.stream()
+                    .map(dto -> "/events/" + dto.getId())
+                    .collect(Collectors.toList());
 
-        List<StatsDto> stats = client.getStats(minTime.format(formatter), maxTime.format(formatter), uris, true);
-
-        for (EventShortDto dto : dtos) {
-            stats.stream()
-                    .filter(stat -> stat.getUri().equals(request.getRequestURI() + "/" + dto.getId()))
-                    .findFirst()
-                    .ifPresent(stat -> dto.setViews(stat.getHits()));
+            try {
+                List<StatsDto> stats = client.getStats(minTime.format(formatter), maxTime.format(formatter), uris, true);
+                for (EventShortDto dto : dtos) {
+                    stats.stream()
+                            .filter(stat -> stat.getUri().equals("/events/" + dto.getId()))
+                            .findFirst()
+                            .ifPresent(stat -> dto.setViews(stat.getHits()));
+                }
+            } catch (Exception e) {
+                log.warn("Failed to fetch stats: {}", e.getMessage());
+            }
         }
 
-        if (dtos.isEmpty()) {
-            throw new ValidationException("Нет подходящих событий");
-        } else {
-            return dtos;
-        }
+        return dtos;
     }
 
     @Override
