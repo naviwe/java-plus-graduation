@@ -2,11 +2,76 @@ spring:
   cloud:
     gateway:
       routes:
-        - id: main_service_route
-          uri: lb://main-service
-
+        - id: user_route
+          uri: lb://user-service
           predicates:
-            - Path=/**
+            - Path=/admin/users/**
+        - id: request_public_route
+          uri: lb://request-service
+          predicates:
+            - Path=/users/{userId}/events/{eventId}/requests
+        - id: request_route
+          uri: lb://request-service
+          predicates:
+            - Path=/users/{userId}/requests/**
+
+        - id: event_admin_route
+          uri: lb://event-service
+          predicates:
+            - Path=/admin/events/**
+
+        - id: event_public_1_route
+          uri: lb://event-service
+          predicates:
+            - Path=/events/{id}
+        - id: event_public_2_route
+          uri: lb://event-service
+          predicates:
+            - Path=/events/internal/**
+        - id: event_public_3_route
+          uri: lb://event-service
+          predicates:
+            - Path=/events
+
+        - id: event_private_1_route
+          uri: lb://event-service
+          predicates:
+            - Path=/users/{userId}/events/{eventId}
+
+        - id: event_private_2_route
+          uri: lb://event-service
+          predicates:
+            - Path=/users/{userId}/events
+
+        - id: compilation_admin_route
+          uri: lb://event-service
+          predicates:
+            - Path=/admin/compilations/**
+
+        - id: compilation_public_route
+          uri: lb://event-service
+          predicates:
+            - Path=/compilations/**
+
+        - id: comment_admin_route
+          uri: lb://comment-service
+          predicates:
+            - Path=/admin/comments/**
+
+        - id: comment_route
+          uri: lb://comment-service
+          predicates:
+            - Path=/events/{eventId}/comments/**
+
+        - id: category_admin_route
+          uri: lb://event-service
+          predicates:
+            - Path=/admin/categories/**
+
+        - id: category_route
+          uri: lb://event-service
+          predicates:
+            - Path=/categories/**
 
 server:
   port: 8080
