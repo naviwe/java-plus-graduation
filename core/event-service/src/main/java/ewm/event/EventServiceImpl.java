@@ -8,6 +8,7 @@ import ewm.interaction.dto.request.ParticipationRequestDto;
 import ewm.interaction.dto.request.RequestStatus;
 import ewm.interaction.exception.ConflictException;
 import ewm.interaction.exception.ForbiddenException;
+import ewm.interaction.exception.ValidationException;
 import ewm.interaction.utils.CheckUserService;
 import ewm.utils.CheckCategoryService;
 import ewm.utils.EventValidationService;
@@ -74,17 +75,29 @@ public class EventServiceImpl implements EventService {
     @Transactional
     public EventFullDto saveEvent(NewEventDto newEventDto, Long userId) {
         Event event = eventMapper.toEvent(newEventDto, userId);
-        Location location = event.getLocation();
-        if (location != null) {
-            location = locationRepository.save(location);
+        
+        if (newEventDto.getLocation() != null) {
+            Location location = locationRepository.findByLatAndLon(
+                    newEventDto.getLocation().getLat(),
+                    newEventDto.getLocation().getLon()
+            ).orElseGet(() -> {
+                Location newLocation = new Location();
+                newLocation.setLat(newEventDto.getLocation().getLat());
+                newLocation.setLon(newEventDto.getLocation().getLon());
+                return locationRepository.save(newLocation);
+            });
             event.setLocation(location);
+        } else {
+            throw new ValidationException("Location cannot be null");
         }
+
         event.setInitiatorId(checkUserService.checkUser(userId));
         event.setCategory(checkCategoryService.checkCategory(newEventDto.getCategory()));
         event.setCreatedOn(LocalDateTime.now());
         event.setState(State.PENDING);
         event.setConfirmedRequests(0L);
         event.setViews(0L);
+
         return logAndReturn(eventMapper.toFullDto(eventRepository.save(event)),
                 dto -> log.info("Event created successfully: {}", dto)
         );
