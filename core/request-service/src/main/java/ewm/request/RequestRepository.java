@@ -1,7 +1,6 @@
 package ewm.request;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import ewm.interaction.dto.request.RequestStatus;
 
 import java.util.List;
 
