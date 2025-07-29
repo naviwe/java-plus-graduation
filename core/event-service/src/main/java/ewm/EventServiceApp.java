@@ -6,7 +6,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @SpringBootApplication(scanBasePackages = {
         "ewm",
-        "ewm.interaction"
+        "ewm.interaction.client"
 })
 @EnableFeignClients(basePackages = {"ewm.interaction.client","ewm.src.main.java"})
 public class EventServiceApp {
