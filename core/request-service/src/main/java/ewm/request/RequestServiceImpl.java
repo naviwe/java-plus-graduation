@@ -51,29 +51,32 @@ public class RequestServiceImpl implements RequestService {
     public ParticipationRequestDto saveRequest(Long userId, Long eventId) {
         Long requesterId = userClient.getUser(userId).getId();
         EventFullDto event = eventClient.getEventByIdInternal(eventId);
-
         checksBeforeSave(requesterId, event);
-
-        RequestStatus status = RequestStatus.PENDING;
-        if (!event.getRequestModeration() || event.getParticipantLimit() == 0) {
+        RequestStatus status = event.getRequestModeration() ? RequestStatus.PENDING : RequestStatus.CONFIRMED;
+        if (event.getParticipantLimit() == 0) {
             status = RequestStatus.CONFIRMED;
+        } else {
+            if (event.getParticipantLimit() - event.getConfirmedRequests() == 0) {
+                throw new ConflictException("Достигнут лимит участников события");
+            }
         }
+        ParticipationRequestDto dto = logAndReturn(
+                requestMapper.toDto(requestRepository.save(Request.builder()
+                        .requesterId(requesterId)
+                        .eventId(event.getId())
+                        .created(LocalDateTime.now())
+                        .status(status)
+                        .build())),
+                savedRequest -> log.info("{} request created successfully: {}",
+                        savedRequest.getStatus(), savedRequest)
+        );
 
-        Request request = Request.builder()
-                .requesterId(requesterId)
-                .eventId(eventId)
-                .created(LocalDateTime.now())
-                .status(status)
-                .build();
-
-        Request savedRequest = requestRepository.save(request);
-
-        if (status == RequestStatus.CONFIRMED) {
+        if (status.equals(RequestStatus.CONFIRMED)) {
             event.setConfirmedRequests(event.getConfirmedRequests() + 1);
             eventClient.changeEventFields(event);
         }
 
-        return requestMapper.toDto(savedRequest);
+        return dto;
     }
 
     @Override

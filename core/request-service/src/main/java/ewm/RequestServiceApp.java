@@ -9,7 +9,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 @SpringBootApplication
 @EnableDiscoveryClient
 @ConfigurationPropertiesScan
-@EnableFeignClients(basePackages = "ewm.interaction.feign")
+@EnableFeignClients(basePackages = {"ewm", "ewm.interaction.feign"})
 public class RequestServiceApp {
     public static void main(String[] args) {
         SpringApplication.run(RequestServiceApp.class,args);
