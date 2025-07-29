@@ -1,5 +1,7 @@
-package ewm.interaction.exception;
+package ewm.exception;
 
+import ewm.interaction.exception.*;
+import feign.FeignException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -16,13 +18,14 @@ import java.util.List;
 @RestControllerAdvice
 public class ErrorHandler {
 
-    @ExceptionHandler(NotFoundException.class)
+    @ExceptionHandler({NotFoundException.class, FeignException.NotFound.class})
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ErrorResponse handleNotFound(final NotFoundException e) {
+    public ErrorResponse handleNotFound(final RuntimeException e) {
         return new ErrorResponse("NOT_FOUND", "The required object was not found.", e.getMessage());
     }
 
-    @ExceptionHandler({ConflictException.class,DataIntegrityViolationException.class})
+    @ExceptionHandler({ConflictException.class, DataIntegrityViolationException.class,
+            FeignException.Conflict.class})
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleConflict(RuntimeException e) {
         return new ErrorResponse("CONFLICT", "Integrity constraint has been violated.", e.getMessage());
