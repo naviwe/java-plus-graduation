@@ -8,7 +8,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
         "ewm",
         "ewm.interaction.feign"
 })
-@EnableFeignClients(basePackages = {"ewm.interaction.feign","ewm.src.main.java.ewm"})
+@EnableFeignClients(basePackages = {"ewm.interaction.feign","ewm.src.main.java"})
 public class EventServiceApp {
 
     public static void main(String[] args) {
