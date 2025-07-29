@@ -21,7 +21,6 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class EventPrivateController {
     final String eventIdPath = "/{eventId}";
-    final String requestsPath = "/requests";
     final EventService eventService;
 
     @GetMapping
@@ -50,3 +49,4 @@ public class EventPrivateController {
         return eventService.updateEvent(updateEventRequest, userId, eventId);
     }
 }
+

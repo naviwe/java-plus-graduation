@@ -61,7 +61,7 @@ public class EventServiceImpl implements EventService {
             throw new ConflictException(String.format("User with id=%d isnt a initiator for event with id=%d",
                     userId, eventId));
         }
-        return logAndReturn(eventMapper.toFullDto(eventValidationService.checkEvent(eventId), UserShortDto.builder()
+        return logAndReturn(eventMapper.toFullDto(eventValidationService.checkEvent(eventId),UserShortDto.builder()
                         .id(userDto.getId())
                         .name(userDto.getName()).build()),
                 event -> log.info("Found event with id={}",
@@ -85,7 +85,7 @@ public class EventServiceImpl implements EventService {
         event.setState(State.PENDING);
         event.setConfirmedRequests(0L);
         event.setViews(0L);
-        return logAndReturn(eventMapper.toFullDto(eventRepository.save(event), UserShortDto.builder()
+        return logAndReturn(eventMapper.toFullDto(eventRepository.save(event),UserShortDto.builder()
                         .id(userDto.getId())
                         .name(userDto.getName()).build()),
                 dto -> log.info("Event created successfully: {}", dto)
@@ -151,7 +151,7 @@ public class EventServiceImpl implements EventService {
                             + updateEventRequest.getStateAction());
             }
         }
-        return logAndReturn(eventMapper.toFullDto(eventRepository.save(event), UserShortDto.builder()
+        return logAndReturn(eventMapper.toFullDto(eventRepository.save(event),UserShortDto.builder()
                         .id(userDto.getId())
                         .name(userDto.getName()).build()),
                 dto -> log.info("Event updated successfully: {}", dto)

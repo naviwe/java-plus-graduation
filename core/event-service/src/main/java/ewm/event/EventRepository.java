@@ -51,7 +51,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
                            @Param("state") State state,
                            Pageable pageable);
 
-    Optional<Event> findByIdAndState(Long id, State state);
+    Optional<Event> findByIdAndState(Long id,State state);
 
     Boolean existsByCategoryId(Long catId);
 

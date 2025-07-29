@@ -73,9 +73,6 @@ spring:
           predicates:
             - Path=/categories/**
 
-
-
-
 server:
   port: 8080
 logging:
