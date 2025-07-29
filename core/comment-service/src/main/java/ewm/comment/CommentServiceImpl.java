@@ -37,7 +37,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public List<CommentDto> findCommentsByEventId(Long eventId, Integer from, Integer size) {
-        checkEventService.checkEvent(eventId); // Проверяем существование события
+        checkEventService.checkEvent(eventId);
         Pageable pageRequest = PageRequest.of(from / size, size);
         Page<Comment> commentPage = commentRepository.findByEventId(eventId, pageRequest);
         return LoggingUtils.logAndReturn(commentPage.getContent()
@@ -111,7 +111,7 @@ public class CommentServiceImpl implements CommentService {
         checkUserIsAuthor(comment, userId);
         checkUpdatedByAdmin(comment);
         comment.setText(updateDto.getText());
-        comment.setUpdated(LocalDateTime.now()); // Обновляем время изменения
+        comment.setUpdated(LocalDateTime.now());
         comment.setUpdatedBy(UpdatedBy.USER.toString());
         return LoggingUtils.logAndReturn(
                 commentMapper.toDto(commentRepository.save(comment)),

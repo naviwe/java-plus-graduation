@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(of = {"text", "authorId"})
+@EqualsAndHashCode(of = { "text", "eventId", "authorId" })
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "comments", schema = "public")
@@ -24,10 +24,12 @@ public class Comment {
     @Column(nullable = false, length = 2000)
     String text;
 
-    @Column(name = "event_id", nullable = false)
+    @JoinColumn(name = "event_id", nullable = false)
+    @ToString.Exclude
     Long eventId;
 
-    @Column(name = "author_id", nullable = false)
+    @JoinColumn(name = "author_id", nullable = false)
+    @ToString.Exclude
     Long authorId;
 
     @Column(nullable = false)

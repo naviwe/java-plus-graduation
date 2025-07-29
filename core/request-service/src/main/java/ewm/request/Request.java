@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "requests", schema = "public")
-@EqualsAndHashCode(of = {"eventId", "requesterId"})
+@EqualsAndHashCode(of = { "eventId", "requesterId" })
 @Getter
 @Setter
 @ToString
@@ -26,10 +26,12 @@ public class Request {
     @Column(nullable = false)
     LocalDateTime created;
 
-    @Column(name = "event_id", nullable = false)
+    @JoinColumn(name = "event_id", nullable = false)
+    @ToString.Exclude
     Long eventId;
 
-    @Column(name = "requester_id", nullable = false)
+    @JoinColumn(name = "requester_id", nullable = false)
+    @ToString.Exclude
     Long requesterId;
 
     @Column(nullable = false)

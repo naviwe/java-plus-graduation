@@ -60,7 +60,8 @@ public class Event {
     @Column(nullable = false, columnDefinition = "BIGINT DEFAULT 0")
     Long views;
 
-    @Column(name = "initiator_id", nullable = false)
+    @JoinColumn(name = "initiator_id", nullable = false)
+    @ToString.Exclude
     Long initiatorId;
 
     @ManyToOne(fetch = FetchType.LAZY)

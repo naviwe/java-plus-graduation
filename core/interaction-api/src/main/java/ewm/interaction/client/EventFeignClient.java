@@ -14,7 +14,7 @@ public interface EventFeignClient {
     EventFullDto findById(@PathVariable("eventId") Long eventId);
 
     @GetMapping("/internal/{id}")
-    public EventFullDto getEventByIdInternal(@PathVariable Long id);
+    EventFullDto getEventByIdInternal(@PathVariable Long id);
 
     @PutMapping
     void changeEventFields(@RequestBody EventFullDto eventFullDto);
