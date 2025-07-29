@@ -2,13 +2,16 @@ package ewm;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
+import org.springframework.context.annotation.ComponentScan;
 
-@SpringBootApplication(scanBasePackages = {
-        "ewm",
-        "ewm.interaction.feign"
-})
-@EnableFeignClients(basePackages = {"ewm.interaction.feign","ewm.src.main.java"})
+@SpringBootApplication
+@EnableDiscoveryClient
+@ConfigurationPropertiesScan
+@EnableFeignClients(basePackages = {"ewm", "ewm.interaction.feign"})
+@ComponentScan(basePackages = {"ewm", "ewm.event"})
 public class EventServiceApp {
 
     public static void main(String[] args) {
