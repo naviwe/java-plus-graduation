@@ -2,99 +2,90 @@ spring:
   cloud:
     gateway:
       routes:
-        - id: user_service_route
+        - id: user_route
           uri: lb://user-service
           predicates:
             - Path=/admin/users/**
-        - id: comment_service_route
-          uri: lb://comment-service
-          predicates:
-            - Path=/event/{eventId}/comment/**
-        - id: admin_categories_service_route
-          uri: lb://event-service
-          predicates:
-            - Path=/admin/categories/**
-        - id: admin_publish_and_edit_event_service_route
-          uri: lb://event-service
-          predicates:
-            - Path=/admin/events/**
-        - id: add_event_service_route
-          uri: lb://event-service
-          predicates:
-            - Path=/user/{userId}/events
-        - id: public_findallby_categories_event_service_route
-          uri: lb://event-service
-          predicates:
-            - Path=/categories
-        - id: public_categories_event_service_route1
-          uri: lb://event-service
-          predicates:
-            - Path=/categories/*
-        - id: public_categories_event_service_route2
-          uri: lb://event-service
-          predicates:
-            - Path=/users/{userId}/events
-        - id: requests_service_route
-          uri: lb://request-service
-          predicates:
-            - Path=/users/{userId}/requests
-        - id: admin_seek_event_service_route
-          uri: lb://event-service
-          predicates:
-            - Path=/admin/events
-        - id: user_seek_event_service_route
-          uri: lb://event-service
-          predicates:
-            - Path=/users/{userId}/events
-            - Query=from
-            - Query=size
-        - id: seek_filtered_event_service_route
-          uri: lb://event-service
-          predicates:
-            - Path=/events
-        - id: seek_by_id_event_service_route
-          uri: lb://event-service
-          predicates:
-            - Path=/events/{id}
-        - id: user_seek_and_edit_by_id_event_service_route
-          uri: lb://event-service
-          predicates:
-            - Path=/users/{id}/events/{eventId}
-        - id: user_seek_by_event_id_change_status_and_reject_request_service_route
+        - id: request_public_route
           uri: lb://request-service
           predicates:
             - Path=/users/{userId}/events/{eventId}/requests
-        - id: user_cancel_by_request_id_service_route
+        - id: request_route
           uri: lb://request-service
           predicates:
-            - Path=/users/{userId}/requests/{requestId}/cancel
-        - id: user_add_by_id_request_service_route
-          uri: lb://request-service
-          predicates:
-            - Path=/users/{userId}/requests/{requestId}/cancel
-        - id: add_new_compilation_service_route
+            - Path=/users/{userId}/requests/**
+
+        - id: event_admin_route
           uri: lb://event-service
           predicates:
-            - Path=/admin/compilations
-        - id: get_by_id_compilation_service_route
+            - Path=/admin/events/**
+
+        - id: event_public_1_route
           uri: lb://event-service
           predicates:
-            - Path=/compilations/{compId}
-        - id: get_filtered_compilation_service_route
+            - Path=/events/{id}
+        - id: event_public_2_route
           uri: lb://event-service
           predicates:
-            - Path=/compilations
-        - id: delete_compilation_service_route
+            - Path=/events/internal/**
+        - id: event_public_3_route
           uri: lb://event-service
           predicates:
-            - Path=/admin/compilations/{compId}
+            - Path=/events
+
+        - id: event_private_1_route
+          uri: lb://event-service
+          predicates:
+            - Path=/users/{userId}/events/{eventId}
+
+        - id: event_private_2_route
+          uri: lb://event-service
+          predicates:
+            - Path=/users/{userId}/events
+
+        - id: compilation_admin_route
+          uri: lb://event-service
+          predicates:
+            - Path=/admin/compilations/**
+
+        - id: compilation_public_route
+          uri: lb://event-service
+          predicates:
+            - Path=/compilations/**
+
+        - id: comment_admin_route
+          uri: lb://comment-service
+          predicates:
+            - Path=/admin/comments/**
+
+        - id: comment_route
+          uri: lb://comment-service
+          predicates:
+            - Path=/events/{eventId}/comments/**
+
+        - id: category_admin_route
+          uri: lb://event-service
+          predicates:
+            - Path=/admin/categories/**
+
+        - id: category_route
+          uri: lb://event-service
+          predicates:
+            - Path=/categories/**
+
+
+
+
 server:
   port: 8080
-
 logging:
   level:
     root: INFO
+
     org.springframework.cloud.gateway: TRACE
+
     reactor.netty.http.client: TRACE
+
     reactor.netty.http.server: DEBUG
+
     org.springframework.cloud.gateway.route.RouteDefinitionLocator: TRACE
