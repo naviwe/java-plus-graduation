@@ -65,17 +65,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Map<Long, UserShortDto> getMapUsers(List<Long> ids) {
-        if (ids == null || ids.isEmpty()) {
-            log.info("Невозможно получить пользователей. Список ids пользвателей пуст");
-            return Collections.emptyMap();
-        }
-
-        return userRepository.findAllById(ids)
-                .stream()
-                .collect(Collectors.toMap(
-                        User::getId,
-                        userMapper::toShortDto
-                ));
+    public UserDto getUser(Long userId) {
+        return userMapper.toDto(userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(String.format("User with id=%d was not found", userId))));
     }
 }

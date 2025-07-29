@@ -14,5 +14,5 @@ public interface UserService {
 
     void deleteUser(Long userId);
 
-    Map<Long, UserShortDto> getMapUsers(List<Long> ids);
+    UserDto getUser(Long userId);
 }

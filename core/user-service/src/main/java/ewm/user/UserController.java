@@ -42,9 +42,9 @@ public class UserController {
         userService.deleteUser(userId);
     }
 
-    @GetMapping("/mapped")
-    public Map<Long, UserShortDto> getUsersByIDS(@RequestParam List<Long> ids) {
-        return userService.getMapUsers(ids);
+    @GetMapping("/{userId}")
+    public UserDto getUser(@PathVariable Long userId) {
+        return userService.getUser(userId);
     }
 
 }

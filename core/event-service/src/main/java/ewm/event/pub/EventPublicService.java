@@ -13,4 +13,9 @@ public interface EventPublicService {
                                   Integer size, HttpServletRequest request);
 
     EventFullDto getEventById(Long id, HttpServletRequest request);
+
+    void changeEventFields(EventFullDto eventFullDto);
+
+
+    EventFullDto getEventByIdInternal(Long id);
 }

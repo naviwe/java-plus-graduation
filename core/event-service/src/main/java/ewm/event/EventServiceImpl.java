@@ -1,11 +1,14 @@
 package ewm.event;
 
 import ewm.interaction.client.RequestFeignClient;
+import ewm.interaction.client.UserFeignClient;
 import ewm.interaction.dto.event.*;
 import ewm.interaction.dto.request.EventRequestStatusUpdateRequest;
 import ewm.interaction.dto.request.EventRequestStatusUpdateResult;
 import ewm.interaction.dto.request.ParticipationRequestDto;
 import ewm.interaction.dto.request.RequestStatus;
+import ewm.interaction.dto.user.UserDto;
+import ewm.interaction.dto.user.UserShortDto;
 import ewm.interaction.exception.ConflictException;
 import ewm.interaction.exception.ForbiddenException;
 import ewm.interaction.exception.ValidationException;
@@ -39,66 +42,62 @@ import static ewm.interaction.utils.LoggingUtils.logAndReturn;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EventServiceImpl implements EventService {
     EventRepository eventRepository;
-    CheckUserService checkUserService;
-    EventValidationService checkEventService;
+    UserFeignClient userClient;
+    EventValidationService eventValidationService;
     EventMapper eventMapper;
     CheckCategoryService checkCategoryService;
     LocationRepository locationRepository;
-    RequestFeignClient requestFeignClient;
 
     @Override
     public List<EventShortDto> findEventsByInitiatorId(Long userId, Integer from, Integer size) {
-        checkUserService.checkUser(userId);
+        UserDto userDto = userClient.getUser(userId);
         Pageable pageRequest = PageRequest.of(from / size, size);
         Page<Event> eventPage = eventRepository.findByInitiatorId(userId, pageRequest);
         return logAndReturn(eventPage.getContent()
                         .stream()
-                        .map(eventMapper::toShortDto)
+                        .map(event -> eventMapper.toShortDto(event, UserShortDto.builder()
+                                .id(userDto.getId())
+                                .name(userDto.getName()).build()))
                         .toList(),
-                events -> log.info("Found {} events for user with id={}", events.size(), userId)
+                events -> log.info("Found {} events for user with id={}",
+                        events.size(), userId)
         );
     }
 
     @Override
     public EventFullDto findById(Long userId, Long eventId) {
-        checkUserService.checkUser(userId);
-        Event event = checkEventService.checkEvent(eventId);
-        if (!event.getInitiatorId().equals(userId)) {
-            throw new ConflictException(String.format(
-                    "User with id=%d isn't an initiator for event with id=%d", userId, eventId));
+        UserDto userDto = userClient.getUser(userId);
+        if (!eventRepository.findByInitiatorId(userId).equals(eventRepository.findById(eventId).get())) {
+            throw new ConflictException(String.format("User with id=%d isnt a initiator for event with id=%d",
+                    userId, eventId));
         }
-        return logAndReturn(eventMapper.toFullDto(event),
-                e -> log.info("Found event with id={}", eventId));
+        return logAndReturn(eventMapper.toFullDto(eventValidationService.checkEvent(eventId), UserShortDto.builder()
+                        .id(userDto.getId())
+                        .name(userDto.getName()).build()),
+                event -> log.info("Found event with id={}",
+                        event.getId())
+        );
     }
 
     @Override
     @Transactional
     public EventFullDto saveEvent(NewEventDto newEventDto, Long userId) {
-        Event event = eventMapper.toEvent(newEventDto, userId);
-
-        if (newEventDto.getLocation() != null) {
-            Location location = locationRepository.findByLatAndLon(
-                    newEventDto.getLocation().getLat(),
-                    newEventDto.getLocation().getLon()
-            ).orElseGet(() -> {
-                Location newLocation = new Location();
-                newLocation.setLat(newEventDto.getLocation().getLat());
-                newLocation.setLon(newEventDto.getLocation().getLon());
-                return locationRepository.save(newLocation);
-            });
+        Event event = eventMapper.toEvent(newEventDto);
+        Location location = event.getLocation();
+        if (location != null) {
+            location = locationRepository.save(location);
             event.setLocation(location);
-        } else {
-            throw new ValidationException("Location cannot be null");
         }
-
-        event.setInitiatorId(checkUserService.checkUser(userId));
+        UserDto userDto = userClient.getUser(userId);
+        event.setInitiatorId(userDto.getId());
         event.setCategory(checkCategoryService.checkCategory(newEventDto.getCategory()));
         event.setCreatedOn(LocalDateTime.now());
         event.setState(State.PENDING);
         event.setConfirmedRequests(0L);
         event.setViews(0L);
-
-        return logAndReturn(eventMapper.toFullDto(eventRepository.save(event)),
+        return logAndReturn(eventMapper.toFullDto(eventRepository.save(event), UserShortDto.builder()
+                        .id(userDto.getId())
+                        .name(userDto.getName()).build()),
                 dto -> log.info("Event created successfully: {}", dto)
         );
     }
@@ -106,20 +105,21 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public EventFullDto updateEvent(UpdateEventRequest updateEventRequest, Long userId, Long eventId) {
-        checkUserService.checkUser(userId);
-        Event event = checkEventService.checkEvent(eventId);
+        UserDto userDto = userClient.getUser(userId);
+        Event event = eventValidationService.checkEvent(eventId);
         if (!event.getInitiatorId().equals(userId)) {
-            throw new ForbiddenException("Only event initiator can update the event");
+            throw new ConflictException(String.format("User with id=%d isnt a initiator for event with id=%d",
+                    userId, eventId));
         }
-
         if (event.getState() == State.PUBLISHED) {
-            throw new ConflictException("Published events cannot be modified");
+            throw new ConflictException("Only pending or canceled events can be changed");
         }
         if (updateEventRequest.getAnnotation() != null) {
             event.setAnnotation(updateEventRequest.getAnnotation());
         }
         if (updateEventRequest.getCategory() != null) {
             Category category = checkCategoryService.checkCategory(updateEventRequest.getCategory());
+            category.setId(updateEventRequest.getCategory());
             event.setCategory(category);
         }
         if (updateEventRequest.getDescription() != null) {
@@ -161,65 +161,10 @@ public class EventServiceImpl implements EventService {
                             + updateEventRequest.getStateAction());
             }
         }
-        return logAndReturn(eventMapper.toFullDto(eventRepository.save(event)),
+        return logAndReturn(eventMapper.toFullDto(eventRepository.save(event), UserShortDto.builder()
+                        .id(userDto.getId())
+                        .name(userDto.getName()).build()),
                 dto -> log.info("Event updated successfully: {}", dto)
         );
-    }
-
-    @Override
-    public List<ParticipationRequestDto> findRequestsByEventId(Long userId, Long eventId) {
-        checkUserService.checkUser(userId);
-        Event event = checkEventService.checkEvent(eventId);
-        if (!event.getInitiatorId().equals(userId)) {
-            throw new ConflictException(String.format(
-                    "User with id=%d isn't an initiator for event with id=%d", userId, eventId));
-        }
-        List<ParticipationRequestDto> requests = requestFeignClient.findRequestsByUserId(userId);
-        return requests.stream()
-                .filter(request -> request.getEvent().equals(eventId))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional
-    public EventRequestStatusUpdateResult updateRequestStatus(EventRequestStatusUpdateRequest requestDto, Long userId,
-                                                              Long eventId) {
-        checkUserService.checkUser(userId);
-        Event event = checkEventService.checkEvent(eventId);
-        if (!event.getInitiatorId().equals(userId)) {
-            throw new ConflictException(String.format("User with id=%d isn't an initiator for event with id=%d", userId,
-                    eventId));
-        }
-
-        if (event.getParticipantLimit() != 0 && event.getConfirmedRequests() != null &&
-                event.getParticipantLimit().equals(event.getConfirmedRequests().intValue())) {
-            throw new ConflictException("There is no more space");
-        }
-        List<ParticipationRequestDto> allRequests = requestFeignClient.findRequestsByUserId(userId);
-        List<ParticipationRequestDto> requests = allRequests.stream()
-                .filter(r -> requestDto.getRequestIds().contains(r.getId()) && r.getStatus() == RequestStatus.PENDING)
-                .collect(Collectors.toList());
-
-        if (requests.size() != requestDto.getRequestIds().size()) {
-            throw new ConflictException("Some requests are not in PENDING status or do not exist");
-        }
-
-        EventRequestStatusUpdateResult result = new EventRequestStatusUpdateResult();
-        List<ParticipationRequestDto> confirmedRequests = new ArrayList<>();
-        List<ParticipationRequestDto> rejectedRequests = new ArrayList<>();
-
-        if (requestDto.getStatus().equals(RequestStatus.CONFIRMED)) {
-            confirmedRequests = requests;
-            result.setConfirmedRequests(confirmedRequests);
-            event.setConfirmedRequests(event.getConfirmedRequests() + confirmedRequests.size());
-        } else if (requestDto.getStatus().equals(RequestStatus.REJECTED)) {
-            rejectedRequests = requests.stream()
-                    .map(request -> requestFeignClient.cancelRequest(userId, request.getId()))
-                    .collect(Collectors.toList());
-            result.setRejectedRequests(rejectedRequests);
-        }
-
-        eventRepository.save(event);
-        return result;
     }
 }

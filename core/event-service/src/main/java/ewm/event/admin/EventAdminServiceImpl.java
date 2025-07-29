@@ -2,13 +2,16 @@ package ewm.event.admin;
 
 import ewm.event.*;
 import ewm.event.mapper.EventMapper;
+import ewm.interaction.client.UserFeignClient;
 import ewm.interaction.dto.event.EventFullDto;
 import ewm.interaction.dto.event.State;
 import ewm.interaction.dto.event.StateAction;
 import ewm.interaction.dto.event.UpdateEventRequest;
+import ewm.interaction.dto.user.UserDto;
+import ewm.interaction.dto.user.UserShortDto;
 import ewm.interaction.exception.ConflictException;
 import ewm.interaction.exception.ForbiddenException;
-import ewm.interaction.exception.ValidationException;
+import ewm.interaction.exception.NotFoundException;
 import ewm.interaction.utils.LoggingUtils;
 import ewm.utils.CheckCategoryService;
 import ewm.utils.EventValidationService;
@@ -36,7 +39,8 @@ public class EventAdminServiceImpl implements EventAdminService {
     EventRepository eventRepository;
     EventMapper eventMapper;
     LocationRepository locationRepository;
-    EventValidationService checkEventService;
+    UserFeignClient userClient;
+    EventValidationService eventValidationService;
     CheckCategoryService checkCategoryService;
 
     static LocalDateTime minTime = LocalDateTime.of(1970, 1, 1, 0, 0);
@@ -44,32 +48,41 @@ public class EventAdminServiceImpl implements EventAdminService {
     static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Override
-    public List<EventFullDto> getEvents(List<Long> users, List<String> statesStr,
+    public List<EventFullDto> getEvents(List<Long> userIds, List<String> statesStr,
                                         List<Long> categories, String rangeStart,
                                         String rangeEnd, Integer from, Integer size) {
-        LocalDateTime start = rangeStart != null && !rangeStart.isEmpty() ?
-                LocalDateTime.parse(rangeStart, formatter) : minTime;
-        LocalDateTime end = rangeEnd != null && !rangeEnd.isEmpty() ?
-                LocalDateTime.parse(rangeEnd, formatter) : maxTime;
 
-        List<State> states = statesStr != null ?
-                statesStr.stream().map(State::valueOf).toList() : null;
+        LocalDateTime start = rangeStart != null ? LocalDateTime.parse(rangeStart, formatter) :
+                minTime;
+        LocalDateTime end = rangeEnd != null ? LocalDateTime.parse(rangeEnd, formatter) :
+                maxTime;
+
+        List<State> states = statesStr != null ? statesStr.stream().map(State::valueOf).toList() : null;
 
         Pageable pageable = PageRequest.of(from / size, size);
-        Page<Event> eventPage = eventRepository.findAllEventsByAdmin(users, states, categories, start, end, pageable);
-        List<Event> events = eventPage.getContent();
+        if (userIds != null) {
+            List<UserShortDto> usersDto = userClient.getUsers(userIds, 0, userIds.size()).stream()
+                    .map(userDto -> UserShortDto.builder().id(userDto.getId())
+                            .name(userDto.getName()).build()).toList();
+            return eventRepository.findAllEventsByAdmin(userIds, states,
+                            categories, start,
+                            end, pageable).stream()
+                    .map(event -> eventMapper.toFullDto(event, usersDto.stream()
+                            .filter(userShortDto -> userShortDto.getId().equals(event.getInitiatorId())).findAny()
+                            .orElseThrow(() -> new NotFoundException("Пользователя с таким id нет")))).toList();
+        } else {
+            Page<Event> events = eventRepository.findAllEventsByAdmin(userIds, states,
+                    categories, start,
+                    end, pageable);
+            List<Long> userFromClientIds = events.stream().map(Event::getInitiatorId).toList();
+            List<UserShortDto> usersDto = userClient.getUsers(userFromClientIds, 0,
+                    userFromClientIds.size()).stream().map(userDto -> UserShortDto.builder()
+                    .id(userDto.getId()).name(userDto.getName()).build()).toList();
+            return events.map(event -> eventMapper.toFullDto(event, usersDto.stream()
+                    .filter(userShortDto -> userShortDto.getId().equals(event.getInitiatorId())).findAny()
+                    .orElseThrow(() -> new NotFoundException("Пользователя с таким id нет")))).toList();
+        }
 
-        log.info("Found {} events for users={}, states={}, categories={}, rangeStart={}, rangeEnd={}",
-                events.size(), users, states, categories, start, end);
-
-        return events.stream()
-                .peek(event -> {
-                    if (event.getState() == State.PUBLISHED && event.getPublishedOn() == null) {
-                        event.setPublishedOn(event.getCreatedOn());
-                    }
-                })
-                .map(eventMapper::toFullDto)
-                .toList();
     }
 
     @Override
@@ -78,23 +91,18 @@ public class EventAdminServiceImpl implements EventAdminService {
         if (updateEventRequest == null) {
             throw new ForbiddenException("Cannot publish the event: request body is missing.");
         }
-        Event event = checkEventService.checkEvent(eventId);
+        Event event = eventValidationService.checkEvent(eventId);
 
-        if (updateEventRequest.getStateAction() != null
-                && updateEventRequest.getStateAction().equals(StateAction.PUBLISH_EVENT)) {
-            if (event.getState().equals(State.PUBLISHED) || event.getState().equals(State.CANCELED)) {
-                throw new ConflictException("Only pending events can be published");
-            }
-            event.setState(State.PUBLISHED);
-            event.setPublishedOn(LocalDateTime.now());
+        if (event.getState().equals(State.PUBLISHED) || event.getState().equals(State.CANCELED)) {
+            throw new ConflictException("Only pending events can be published");
         }
 
-        if (updateEventRequest.getEventDate() != null) {
-            LocalDateTime newEventDate = LocalDateTime.parse(updateEventRequest.getEventDate(), formatter);
-            if (newEventDate.isBefore(LocalDateTime.now().plusHours(2))) {
-                throw new ValidationException("Event date must be at least 2 hours in the future");
+        if (updateEventRequest.getStateAction() != null) {
+            if (updateEventRequest.getStateAction().equals(StateAction.PUBLISH_EVENT)) {
+                event.setState(State.PUBLISHED);
+            } else {
+                throw new ForbiddenException("Cannot publish the event because it's not in the right state: PUBLISHED");
             }
-            event.setEventDate(newEventDate);
         }
         if (updateEventRequest.getAnnotation() != null) {
             event.setAnnotation(updateEventRequest.getAnnotation());
@@ -134,8 +142,11 @@ public class EventAdminServiceImpl implements EventAdminService {
         if (updateEventRequest.getTitle() != null) {
             event.setTitle(updateEventRequest.getTitle());
         }
+        UserDto userDto = userClient.getUser(event.getInitiatorId());
 
-        return LoggingUtils.logAndReturn(eventMapper.toFullDto(eventRepository.save(event)),
+        return LoggingUtils.logAndReturn(eventMapper.toFullDto(eventRepository.save(event), UserShortDto.builder()
+                        .id(userDto.getId())
+                        .name(userDto.getName()).build()),
                 dto -> log.info("Event updated successfully: {}", dto)
         );
     }

@@ -3,9 +3,12 @@ package ewm.event.pub;
 import ewm.event.Event;
 import ewm.event.EventRepository;
 import ewm.event.mapper.EventMapper;
+import ewm.interaction.client.UserFeignClient;
 import ewm.interaction.dto.event.EventFullDto;
 import ewm.interaction.dto.event.EventShortDto;
 import ewm.interaction.dto.event.State;
+import ewm.interaction.dto.user.UserDto;
+import ewm.interaction.dto.user.UserShortDto;
 import ewm.interaction.exception.NotFoundException;
 import ewm.interaction.exception.ValidationException;
 import ewm.utils.EventValidationService;
@@ -34,7 +37,8 @@ public class EventPublicServiceImpl implements EventPublicService {
 
     private EventRepository eventRepository;
     private EventMapper eventMapper;
-    private EventValidationService checkEventService;
+    private EventValidationService eventValidationService;
+    private UserFeignClient userClient;
 
 
     private String app;
@@ -42,13 +46,15 @@ public class EventPublicServiceImpl implements EventPublicService {
 
     public EventPublicServiceImpl(EventRepository eventRepository,
                                   EventMapper eventMapper,
-                                  EventValidationService checkEventService,
+                                  EventValidationService eventValidationService,
+                                  UserFeignClient userClient,
                                   @Value("${my.app}") String app,
                                   StatsClient client) {
         this.eventRepository = eventRepository;
         this.eventMapper = eventMapper;
-        this.checkEventService = checkEventService;
+        this.eventValidationService = eventValidationService;
         this.app = app;
+        this.userClient = userClient;
         this.client = client;
     }
 
@@ -63,72 +69,79 @@ public class EventPublicServiceImpl implements EventPublicService {
                                          String sort, Integer from, Integer size, HttpServletRequest request) {
         Pageable pageable = PageRequest.of(from / size, size);
 
-        if (from < 0 || size <= 0) {
-            throw new ValidationException("Invalid pagination parameters");
-        }
-
-        LocalDateTime start = rangeStart != null && !rangeStart.isEmpty() ?
-                LocalDateTime.parse(rangeStart, formatter) : LocalDateTime.now();
-        LocalDateTime end = rangeEnd != null && !rangeEnd.isEmpty() ?
-                LocalDateTime.parse(rangeEnd, formatter) : maxTime;
-        text = text != null ? text.toLowerCase() : "";
-
+        LocalDateTime start = rangeStart != null ? LocalDateTime.parse(rangeStart, formatter) : minTime;
+        LocalDateTime end = rangeEnd != null ? LocalDateTime.parse(rangeEnd, formatter) : maxTime;
+        text = text != null ? text : "";
         Page<Event> events = eventRepository.findEvents(text, paid, start, end, categories, onlyAvailable,
                 State.PUBLISHED, pageable);
-        List<EventShortDto> dtos = events.getContent().stream()
-                .map(eventMapper::toShortDto)
-                .collect(Collectors.toList());
+        List<Long> userIds = events.stream().map(Event::getInitiatorId).toList();
+        if (userIds.isEmpty()) {
+            throw new ValidationException("Нет подходящих событий");
+        }
+        List<UserShortDto> usersDto = userClient.getUsers(userIds, 0, userIds.size()).stream()
+                .map(userDto -> UserShortDto.builder().id(userDto.getId()).name(userDto.getName()).build()).toList();
+        List<EventShortDto> dtos = events.map(event -> eventMapper.toShortDto(event, usersDto.stream()
+                .filter(userShortDto -> userShortDto.getId().equals(event.getInitiatorId())).findAny()
+                .orElseThrow(() -> new NotFoundException("Пользователя с таким id нет")))).toList();
 
-        if (!dtos.isEmpty() && sort != null) {
-            dtos = dtos.stream()
-                    .sorted((dto1, dto2) -> {
+        if (sort != null) {
+            dtos = events.stream()
+                    .sorted((event1, event2) -> {
                         if (sort.equals("EVENT_DATE")) {
-                            return dto1.getEventDate().compareTo(dto2.getEventDate());
+                            if (event1.getEventDate().isBefore(event2.getEventDate()))
+                                return -1;
+                            else
+                                return 1;
                         } else if (sort.equals("VIEWS")) {
-                            return Long.compare(dto2.getViews(), dto1.getViews());
+                            return (int) (event1.getViews() - event2.getViews());
                         }
-                        return 0;
+                        return 1;
                     })
-                    .collect(Collectors.toList());
+                    .map(event -> eventMapper.toShortDto(event, usersDto.stream()
+                            .filter(userShortDto -> userShortDto.getId().equals(event.getInitiatorId())).findAny()
+                            .orElseThrow(() -> new NotFoundException("Пользователя с таким id нет"))))
+                    .toList();
         }
 
         hitStats(request);
 
-        if (!dtos.isEmpty()) {
-            List<String> uris = dtos.stream()
-                    .map(dto -> "/events/" + dto.getId())
-                    .collect(Collectors.toList());
+        List<String> uris = dtos.stream()
+                .map(dto -> request.getRequestURI() + "/" + dto.getId())
+                .collect(Collectors.toList());
 
-            try {
-                List<StatsDto> stats = client.getStats(minTime.format(formatter), maxTime.format(formatter), uris, true);
-                for (EventShortDto dto : dtos) {
-                    stats.stream()
-                            .filter(stat -> stat.getUri().equals("/events/" + dto.getId()))
-                            .findFirst()
-                            .ifPresent(stat -> dto.setViews(stat.getHits()));
-                }
-            } catch (Exception e) {
-                log.warn("Failed to fetch stats: {}", e.getMessage());
-            }
+        List<StatsDto> stats = client.getStats(minTime.format(formatter), maxTime.format(formatter), uris, true);
+
+        for (EventShortDto dto : dtos) {
+            stats.stream()
+                    .filter(stat -> stat.getUri().equals(request.getRequestURI() + "/" + dto.getId()))
+                    .findFirst()
+                    .ifPresent(stat -> dto.setViews(stat.getHits()));
         }
 
-        return dtos;
+        if (dtos.isEmpty()) {
+            throw new ValidationException("Нет подходящих событий");
+        } else {
+            return dtos;
+        }
     }
 
     @Override
     public EventFullDto getEventById(Long id, HttpServletRequest request) {
-        Event event = eventRepository.findByIdAndState(id, State.PUBLISHED)
-                .orElseThrow(() -> new NotFoundException("Event with id=" + id + " was not found or not published"));
-
+        Event event = eventValidationService.checkPublishedEvent(id);
+        UserDto userDto = userClient.getUser(event.getInitiatorId());
+        EventFullDto eventFullDto = eventMapper.toFullDto(event, UserShortDto.builder().id(userDto.getId())
+                .name(userDto.getName()).build());
         hitStats(request);
+        eventFullDto.setViews(getStats(request).getFirst().getHits());
+        return eventFullDto;
+    }
 
-        List<StatsDto> stats = getStats(request);
-        long views = stats.isEmpty() ? 0 : stats.getFirst().getHits();
-
-        EventFullDto dto = eventMapper.toFullDto(event);
-        dto.setViews(views);
-
-        return dto;
+    @Override
+    public EventFullDto getEventByIdInternal(Long id) {
+        Event event = eventRepository.findById(id).orElseThrow(() -> new NotFoundException("Ивента с таким id нет"));
+        UserDto userDto = userClient.getUser(event.getInitiatorId());
+        return eventMapper.toFullDto(event, UserShortDto.builder().id(userDto.getId())
+                .name(userDto.getName()).build());
     }
 
     private void hitStats(HttpServletRequest request) {
@@ -139,5 +152,17 @@ public class EventPublicServiceImpl implements EventPublicService {
     private List<StatsDto> getStats(HttpServletRequest request) {
         return client.getStats(minTime.format(formatter),
                 maxTime.format(formatter), List.of(request.getRequestURI()), true);
+    }
+
+
+    @Override
+    public void changeEventFields(EventFullDto eventFullDto) {
+        Event event = eventRepository.findById(eventFullDto.getId())
+                .orElseThrow(() -> new NotFoundException("События с таким id нет"));
+        if (!eventFullDto.getConfirmedRequests().equals(event.getConfirmedRequests())) {
+            event.setConfirmedRequests(eventFullDto.getConfirmedRequests());
+        }
+        eventRepository.save(event);
+
     }
 }

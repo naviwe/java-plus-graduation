@@ -1,6 +1,5 @@
 package ewm.event.admin;
 
-
 import ewm.interaction.dto.event.EventFullDto;
 import ewm.interaction.dto.event.UpdateEventRequest;
 import jakarta.transaction.Transactional;
@@ -37,7 +36,7 @@ public class EventAdminController {
     @Transactional
     @PatchMapping("/{eventId}")
     public EventFullDto publishEvent(@RequestBody(required = false) @Valid UpdateEventRequest updateEventRequest,
-                                      @PathVariable Long eventId) {
+                                     @PathVariable Long eventId) {
 
         return eventAdminService.updateEvent(updateEventRequest,eventId);
 

@@ -39,31 +39,17 @@ public class EventPrivateController {
         return eventService.findById(userId, eventId);
     }
 
-    @GetMapping(eventIdPath + requestsPath)
-    public List<ParticipationRequestDto> findRequestsByEventId(@PathVariable Long userId,
-                                                               @PathVariable Long eventId) {
-        return eventService.findRequestsByEventId(userId, eventId);
-    }
-
     @PostMapping()
     @ResponseStatus(HttpStatus.CREATED)
     public EventFullDto saveEvent(@RequestBody @Valid NewEventDto newEventDto,
-                              @PathVariable Long userId) {
+                                  @PathVariable Long userId) {
         return eventService.saveEvent(newEventDto, userId);
     }
 
     @PatchMapping(eventIdPath)
     public EventFullDto updateEvent(@Valid @RequestBody UpdateEventRequest updateEventRequest,
-                                @PathVariable Long userId,
-                                @PathVariable Long eventId) {
+                                    @PathVariable Long userId,
+                                    @PathVariable Long eventId) {
         return eventService.updateEvent(updateEventRequest, userId, eventId);
-    }
-
-    @PatchMapping(eventIdPath + requestsPath)
-    public EventRequestStatusUpdateResult updateRequestStatus(
-            @RequestBody EventRequestStatusUpdateRequest requestDto,
-            @PathVariable Long userId,
-            @PathVariable Long eventId) {
-        return eventService.updateRequestStatus(requestDto, userId, eventId);
     }
 }
