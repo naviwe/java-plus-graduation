@@ -22,14 +22,16 @@ public class RequestController {
         return requestService.findRequestsByUserId(userId);
     }
 
-    @PostMapping()
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ParticipationRequestDto saveRequest(@PathVariable Long userId, @RequestParam Long eventId) {
+    public ParticipationRequestDto saveRequest(@PathVariable Long userId,
+                                               @RequestParam Long eventId) {
         return requestService.saveRequest(userId, eventId);
     }
 
     @PatchMapping(cancelPath)
-    public ParticipationRequestDto cancelRequest(@PathVariable Long userId, @PathVariable Long requestId) {
+    public ParticipationRequestDto cancelRequest(@PathVariable Long userId,
+                                                 @PathVariable Long requestId) {
         return requestService.cancelRequest(userId, requestId);
     }
 }
