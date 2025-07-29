@@ -24,7 +24,7 @@ public class CompilationAdminServiceImpl implements CompilationAdminService {
 
     CompilationMapper compilationMapper;
     CheckCompilationService checkCompilationService;
-    EventValidationService checkEventService;
+    EventValidationService eventValidationService;
     CompilationRepository compilationRepository;
 
 
@@ -33,7 +33,7 @@ public class CompilationAdminServiceImpl implements CompilationAdminService {
     public CompilationDto createCompilation(NewCompilationDto newCompilationDto) {
         Compilation compilation = compilationMapper.toCompilation(newCompilationDto);
         compilation.setEvents(newCompilationDto.getEvents().stream()
-                .map(checkEventService::checkEvent).collect(Collectors.toSet()));
+                .map(eventValidationService::checkEvent).collect(Collectors.toSet()));
         return compilationMapper.toDto(compilationRepository.save(compilation));
     }
 
@@ -51,7 +51,7 @@ public class CompilationAdminServiceImpl implements CompilationAdminService {
         }
         if (updateCompilationRequest.getEvents() != null && !updateCompilationRequest.getEvents().isEmpty()) {
             compilation.setEvents(updateCompilationRequest.getEvents().stream()
-                    .map(checkEventService::checkEvent).collect(Collectors.toSet()));
+                    .map(eventValidationService::checkEvent).collect(Collectors.toSet()));
         }
         return compilationMapper.toDto(compilationRepository.save(compilation));
     }

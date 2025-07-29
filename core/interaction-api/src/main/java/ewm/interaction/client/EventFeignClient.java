@@ -10,9 +10,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 @FeignClient(name = "event-service", path = "/events/feign")
 public interface EventFeignClient {
 
-    @GetMapping("/events/{eventId}")
-    EventFullDto findById(@PathVariable("eventId") Long eventId);
-
     @GetMapping("/internal/{id}")
     EventFullDto getEventByIdInternal(@PathVariable Long id);
 
