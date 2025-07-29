@@ -3,7 +3,7 @@ package ewm.event.pub;
 import ewm.event.Event;
 import ewm.event.EventRepository;
 import ewm.event.mapper.EventMapper;
-import ewm.interaction.client.UserFeignClient;
+import ewm.interaction.feign.UserFeignClient;
 import ewm.interaction.dto.event.EventFullDto;
 import ewm.interaction.dto.event.EventShortDto;
 import ewm.interaction.dto.event.State;

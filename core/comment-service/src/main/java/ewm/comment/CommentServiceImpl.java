@@ -1,7 +1,7 @@
 package ewm.comment;
 
-import ewm.interaction.client.EventFeignClient;
-import ewm.interaction.client.UserFeignClient;
+import ewm.interaction.feign.EventFeignClient;
+import ewm.interaction.feign.UserFeignClient;
 import ewm.interaction.dto.comment.CommentCreateDto;
 import ewm.interaction.dto.comment.CommentDto;
 import ewm.interaction.dto.comment.CommentUpdateDto;

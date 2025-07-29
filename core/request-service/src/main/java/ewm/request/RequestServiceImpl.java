@@ -1,7 +1,7 @@
 package ewm.request;
 
-import ewm.interaction.client.EventFeignClient;
-import ewm.interaction.client.UserFeignClient;
+import ewm.interaction.feign.EventFeignClient;
+import ewm.interaction.feign.UserFeignClient;
 import ewm.interaction.dto.event.EventFullDto;
 import ewm.interaction.dto.event.State;
 import ewm.interaction.dto.request.EventRequestStatusUpdateRequest;

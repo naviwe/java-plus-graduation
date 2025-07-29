@@ -2,7 +2,7 @@ package ewm.event.admin;
 
 import ewm.event.*;
 import ewm.event.mapper.EventMapper;
-import ewm.interaction.client.UserFeignClient;
+import ewm.interaction.feign.UserFeignClient;
 import ewm.interaction.dto.event.EventFullDto;
 import ewm.interaction.dto.event.State;
 import ewm.interaction.dto.event.StateAction;

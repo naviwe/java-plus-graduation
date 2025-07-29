@@ -1,4 +1,4 @@
-package ewm.interaction.client;
+package ewm.interaction.feign;
 
 import ewm.interaction.dto.event.EventFullDto;
 import org.springframework.cloud.openfeign.FeignClient;

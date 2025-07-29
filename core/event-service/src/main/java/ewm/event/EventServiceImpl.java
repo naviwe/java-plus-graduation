@@ -1,6 +1,6 @@
 package ewm.event;
 
-import ewm.interaction.client.UserFeignClient;
+import ewm.interaction.feign.UserFeignClient;
 import ewm.interaction.dto.event.*;
 import ewm.interaction.dto.user.UserDto;
 import ewm.interaction.dto.user.UserShortDto;

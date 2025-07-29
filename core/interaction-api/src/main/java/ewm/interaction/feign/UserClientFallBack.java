@@ -1,4 +1,4 @@
-package ewm.interaction.client;
+package ewm.interaction.feign;
 
 import ewm.interaction.dto.user.UserDto;
 import org.springframework.stereotype.Component;
