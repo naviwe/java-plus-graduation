@@ -1,18 +1,10 @@
 package ewm.event;
 
-import ewm.interaction.client.RequestFeignClient;
 import ewm.interaction.client.UserFeignClient;
 import ewm.interaction.dto.event.*;
-import ewm.interaction.dto.request.EventRequestStatusUpdateRequest;
-import ewm.interaction.dto.request.EventRequestStatusUpdateResult;
-import ewm.interaction.dto.request.ParticipationRequestDto;
-import ewm.interaction.dto.request.RequestStatus;
 import ewm.interaction.dto.user.UserDto;
 import ewm.interaction.dto.user.UserShortDto;
 import ewm.interaction.exception.ConflictException;
-import ewm.interaction.exception.ForbiddenException;
-import ewm.interaction.exception.ValidationException;
-import ewm.interaction.utils.CheckUserService;
 import ewm.utils.CheckCategoryService;
 import ewm.utils.EventValidationService;
 import lombok.AccessLevel;
@@ -29,9 +21,7 @@ import ewm.event.mapper.EventMapper;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static ewm.interaction.utils.LoggingUtils.logAndReturn;
 

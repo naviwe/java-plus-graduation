@@ -1,7 +1,6 @@
 package ewm.user;
 
 import ewm.interaction.dto.user.UserDto;
-import ewm.interaction.dto.user.UserShortDto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -12,7 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
