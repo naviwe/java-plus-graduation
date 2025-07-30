@@ -50,10 +50,8 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public CommentDto getComment(Long commentId,Long eventId) {
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new NotFoundException(String.format("Category with id=%d was not found",
-                        commentId)));
+    public CommentDto getComment(Long commentId, Long eventId) {
+        Comment comment = getCommentById(commentId);
         EventFullDto event = eventClient.getEventByIdInternal(eventId);
         if (!comment.getEventId().equals(event.getId())) {
             throw new ValidationException("Некорректный запрос");
@@ -67,25 +65,20 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional
     public CommentDto createComment(CommentCreateDto commentCreateDto, Long userId, Long eventId) {
-        return logAndReturn(commentMapper.toDto(commentRepository.save(Comment.builder()
-                        .text(commentCreateDto.getText())
-                        .created(commentCreateDto.getCreated())
-                        .updated(commentCreateDto.getUpdated())
-                        .updatedBy(commentCreateDto.getUpdatedBy())
-                        .authorId(userClient.getUser(userId).getId())
-                        .eventId(eventClient.getEventByIdInternal(eventId).getId())
-                        .build())),
-                savedComment -> log.info("Comment created successfully: {}",
-                        savedComment)
+        Comment comment = commentMapper.toEntity(commentCreateDto);
+        comment.setAuthorId(userClient.getUser(userId).getId());
+        comment.setEventId(eventClient.getEventByIdInternal(eventId).getId());
+
+        return logAndReturn(
+                commentMapper.toDto(commentRepository.save(comment)),
+                savedComment -> log.info("Comment created successfully: {}", savedComment)
         );
     }
 
     @Override
     @Transactional
     public CommentDto updateCommentByAdmin(CommentUpdateDto updateDto, Long commentId) {
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new NotFoundException(String.format("Category with id=%d was not found",
-                        commentId)));
+        Comment comment = getCommentById(commentId);
         comment.setText(updateDto.getText());
         comment.setUpdated(LocalDateTime.now());
         comment.setUpdatedBy(UpdatedBy.ADMIN.toString());
@@ -98,19 +91,15 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional
     public void deleteCommentByAdmin(Long commentId) {
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new NotFoundException(String.format("Category with id=%d was not found",
-                        commentId)));
+        Comment comment = getCommentById(commentId);
         commentRepository.delete(comment);
         log.info("Comment with id={} deleted by admin", commentId);
     }
 
     @Override
     @Transactional
-    public CommentDto updateCommentByUser(Long commentId, Long userId, Long eventId,CommentUpdateDto updateDto) {
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new NotFoundException(String.format("Category with id=%d was not found",
-                        commentId)));
+    public CommentDto updateCommentByUser(Long commentId, Long userId, Long eventId, CommentUpdateDto updateDto) {
+        Comment comment = getCommentById(commentId);
         EventFullDto event = eventClient.getEventByIdInternal(eventId);
         if (!comment.getEventId().equals(event.getId())) {
             throw new ValidationException("Некорректный запрос");
@@ -127,10 +116,8 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public void deleteCommentByUser(Long commentId, Long userId,Long eventId) {
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new NotFoundException(String.format("Category with id=%d was not found",
-                        commentId)));
+    public void deleteCommentByUser(Long commentId, Long userId, Long eventId) {
+        Comment comment = getCommentById(commentId);
         checkUserIsAuthor(comment, userId);
         EventFullDto event = eventClient.getEventByIdInternal(eventId);
         if (!comment.getEventId().equals(event.getId())) {
@@ -139,6 +126,12 @@ public class CommentServiceImpl implements CommentService {
         }
         commentRepository.delete(comment);
         log.info("Comment {} deleted by user {}", commentId, userId);
+    }
+
+    private Comment getCommentById(Long commentId) {
+        return commentRepository.findById(commentId)
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("Comment with id=%d was not found", commentId)));
     }
 
     private void checkUserIsAuthor(Comment comment, Long userId) {

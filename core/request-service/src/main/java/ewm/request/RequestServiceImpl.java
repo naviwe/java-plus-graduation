@@ -37,8 +37,7 @@ public class RequestServiceImpl implements RequestService {
 
     @Override
     public List<ParticipationRequestDto> findRequestsByUserId(Long userId) {
-        userClient.getUser(userId)
-        ;
+        userClient.getUser(userId);
         return logAndReturn(
                 requestMapper.toDtoList(requestRepository.findByRequesterId(userId)),
                 requests -> log.info("Found {} requests for user with id={}",
@@ -145,14 +144,10 @@ public class RequestServiceImpl implements RequestService {
     }
 
     private List<ParticipationRequestDto> processRequests(List<Request> requests, RequestStatus status) {
-        return requests.stream()
-                .map(request -> {
-                    request.setStatus(status);
-                    requestRepository.save(request);
-                    ParticipationRequestDto dto = requestMapper.toDto(request);
-                    dto.setStatus(status);
-                    return dto;
-                })
+        requests.forEach(request -> request.setStatus(status));
+        List<Request> updatedRequests = requestRepository.saveAll(requests);
+        return updatedRequests.stream()
+                .map(requestMapper::toDto)
                 .collect(Collectors.toList());
     }
 
