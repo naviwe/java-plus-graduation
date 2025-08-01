@@ -10,8 +10,8 @@ import org.springframework.context.annotation.ComponentScan;
 @SpringBootApplication
 @EnableDiscoveryClient
 @ConfigurationPropertiesScan
-@EnableFeignClients(basePackages = {"ewm.interaction.feign"})
-@ComponentScan(basePackages = {"ewm.client", "ewm.request", "ru.practicum.ewm.stats.client"})
+@EnableFeignClients(basePackages = {"ewm", "ewm.interaction.feign"})
+@ComponentScan(basePackages = {"ewm", "ewm.request", "ru.practicum.ewm.stats.client"})
 public class RequestServiceApp {
     public static void main(String[] args) {
         SpringApplication.run(RequestServiceApp.class,args);

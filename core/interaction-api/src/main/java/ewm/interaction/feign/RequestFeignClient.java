@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-@FeignClient(name = "request-service", url = "/request")
+@FeignClient(name = "request-service", path = "/request")
 public interface RequestFeignClient {
     @GetMapping("/users/{userId}/requests")
     List<ParticipationRequestDto> findRequestsByUserId(@RequestParam Long userId);
