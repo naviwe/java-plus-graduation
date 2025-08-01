@@ -26,7 +26,7 @@ public class UserActionService {
             case ACTION_VIEW -> actionType = ActionTypeAvro.VIEW;
             case ACTION_LIKE -> actionType = ActionTypeAvro.LIKE;
             case ACTION_REGISTER -> actionType = ActionTypeAvro.REGISTER;
-            default -> throw new IllegalArgumentException("Такого типа нет: " + request.getActionType());
+            default -> throw new IllegalArgumentException("There is no such type: " + request.getActionType());
         }
 
         UserActionAvro avro = UserActionAvro.newBuilder()

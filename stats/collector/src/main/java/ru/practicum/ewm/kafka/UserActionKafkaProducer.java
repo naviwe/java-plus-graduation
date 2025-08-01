@@ -32,9 +32,9 @@ public class UserActionKafkaProducer {
 
         sendCompletion.whenComplete((result, exception) -> {
             if (exception == null) {
-                log.info("Сообщение отправлено");
+                log.info("The message has been sent");
             } else {
-                log.error("Ошибка при отправке сообщения в Kafka", exception);
+                log.error("Error when sending a message to Kafka", exception);
             }
         });
     }

@@ -58,13 +58,13 @@ public class EventServiceImpl implements EventService {
     public EventFullDto findById(Long userId, Long eventId) {
         UserDto userDto = userClient.getUser(userId);
         if (!eventRepository.findByInitiatorId(userId).equals(eventRepository.findById(eventId).get())) {
-            throw new ConflictException(String.format("User with id=%d isnt a initiator for event with id=%d",
+            throw new ConflictException(String.format("User with id=%d is not the initiator of event with id=%d",
                     userId, eventId));
         }
         return logAndReturn(eventMapper.toFullDto(eventValidationService.checkEvent(eventId),UserShortDto.builder()
                         .id(userDto.getId())
                         .name(userDto.getName()).build()),
-                event -> log.info("Found event with id={}",
+                event -> log.info("Retrieved event with id={}",
                         event.getId())
         );
     }
@@ -88,7 +88,7 @@ public class EventServiceImpl implements EventService {
         return logAndReturn(eventMapper.toFullDto(eventRepository.save(event),UserShortDto.builder()
                         .id(userDto.getId())
                         .name(userDto.getName()).build()),
-                dto -> log.info("Event created successfully: {}", dto)
+                dto -> log.info("Event created successfully with ID: {}", dto.getId())
         );
     }
 
@@ -98,11 +98,11 @@ public class EventServiceImpl implements EventService {
         UserDto userDto = userClient.getUser(userId);
         Event event = eventValidationService.checkEvent(eventId);
         if (!event.getInitiatorId().equals(userId)) {
-            throw new ConflictException(String.format("User with id=%d isnt a initiator for event with id=%d",
+            throw new ConflictException(String.format("User with id=%d is not authorized to modify event with id=%d",
                     userId, eventId));
         }
         if (event.getState() == State.PUBLISHED) {
-            throw new ConflictException("Only pending or canceled events can be changed");
+            throw new ConflictException("Only pending or canceled events can be modified");
         }
         if (updateEventRequest.getAnnotation() != null) {
             event.setAnnotation(updateEventRequest.getAnnotation());
@@ -147,14 +147,14 @@ public class EventServiceImpl implements EventService {
                     event.setState(State.CANCELED);
                     break;
                 default:
-                    throw new IllegalArgumentException("Неподдерживаемое действие: "
+                    throw new IllegalArgumentException("Unsupported action: "
                             + updateEventRequest.getStateAction());
             }
         }
         return logAndReturn(eventMapper.toFullDto(eventRepository.save(event),UserShortDto.builder()
                         .id(userDto.getId())
                         .name(userDto.getName()).build()),
-                dto -> log.info("Event updated successfully: {}", dto)
+                dto -> log.info("Event with ID {} updated successfully", dto.getId())
         );
     }
 }

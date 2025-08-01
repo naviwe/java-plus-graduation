@@ -58,7 +58,7 @@ public class RequestServiceImpl implements RequestService {
         if (event.getParticipantLimit() == 0) {
             status = RequestStatus.CONFIRMED;
         } else if (event.getParticipantLimit() - event.getConfirmedRequests() == 0) {
-            throw new ConflictException("Достигнут лимит участников события");
+            throw new ConflictException("The event participant limit has been reached");
         }
 
         Request request = Request.builder()
@@ -78,7 +78,7 @@ public class RequestServiceImpl implements RequestService {
                 collectorClient.registrationInEvent(requesterId, eventId);
                 log.info("User action REGISTER sent to Collector for userId={}, eventId={}", requesterId, eventId);
             } catch (Exception e) {
-                log.error("Ошибка при отправке действия REGISTER в Collector: {}", e.getMessage(), e);
+                log.error("Error when sending the REGISTER action to the Collector: {}", e.getMessage(), e);
             }
         }
 
@@ -150,7 +150,7 @@ public class RequestServiceImpl implements RequestService {
                     log.info("User action REGISTER sent to Collector for userId={}, eventId={}", request.getRequesterId(), eventId);
                 }
             } catch (Exception e) {
-                log.error("Ошибка при отправке действия REGISTER в Collector: {}", e.getMessage(), e);
+                log.error("Error when sending the REGISTER action to the Collector: {}", e.getMessage(), e);
             }
         } else if (requestDto.getStatus().equals(RequestStatus.REJECTED)) {
             rejectedRequests = processRequests(requests, requestDto.getStatus());

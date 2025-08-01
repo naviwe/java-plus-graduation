@@ -49,14 +49,14 @@ public class SimilarityProcessor implements Runnable {
                 }
                 consumer.commitAsync((offsets, exception) -> {
                     if (exception != null) {
-                        log.warn("Ошибка при фиксации смещений: {}", offsets, exception);
+                        log.warn("Error when fixing offsets: {}", offsets, exception);
                     }
                 });
             }
         } catch (WakeupException ignored) {
             // Остановка потребителя
         } catch (Exception error) {
-            log.error("Ошибка при обработке действий пользователя", error);
+            log.error("Error when processing user actions", error);
         } finally {
             try {
                 consumer.commitSync();

@@ -57,7 +57,7 @@ public class EventPublicServiceImpl implements EventPublicService {
             LocalDateTime start = LocalDateTime.parse(rangeStart, formatter);
             LocalDateTime end = LocalDateTime.parse(rangeEnd, formatter);
             if (end.isBefore(start)) {
-                throw new ValidationException("The end date rangeEnd cannot be earlier than the start date rangeStart");
+                throw new ValidationException("End date cannot be earlier than start date");
             }
         }
 
@@ -79,7 +79,7 @@ public class EventPublicServiceImpl implements EventPublicService {
                 text, paid, start, end, categories, onlyAvailable, State.PUBLISHED, pageable);
 
         if (events.isEmpty()) {
-            log.info("No events found for query: text={}, categories={}, paid={}, start={}, end={}, onlyAvailable={}",
+            log.info("No events found for parameters: text={}, categories={}, paid={}, start={}, end={}, onlyAvailable={}",
                     text, categories, paid, start, end, onlyAvailable);
             return List.of();
         }
@@ -89,7 +89,7 @@ public class EventPublicServiceImpl implements EventPublicService {
         try {
             ratings = analyzerClient.getInteractionsCount(eventIds);
         } catch (StatusRuntimeException e) {
-            log.error("Failed to fetch ratings from analyzer: {}", e.getStatus(), e);
+            log.error("Failed to retrieve event ratings from analyzer: {}", e.getStatus(), e);
             ratings = Map.of();
         }
 
@@ -106,7 +106,7 @@ public class EventPublicServiceImpl implements EventPublicService {
             UserShortDto initiator = usersDto.stream()
                     .filter(user -> user.getId().equals(event.getInitiatorId()))
                     .findAny()
-                    .orElseThrow(() -> new NotFoundException("Пользователь с id=" + event.getInitiatorId() + " не найден"));
+                    .orElseThrow(() -> new NotFoundException("User with id=" + event.getInitiatorId() + " not found"));
             double rating = finalRatings.getOrDefault(event.getId(), 0.0);
             event.setRating(rating);
             return eventMapper.toShortDto(event, initiator);
@@ -122,19 +122,19 @@ public class EventPublicServiceImpl implements EventPublicService {
     @Override
     public EventFullDto getEventByIdInternal(Long id) {
         Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Событие с id=" + id + " не найдено"));
+                .orElseThrow(() -> new NotFoundException("Event with id=" + id + " not found"));
         return getEventFullDto(event, null);
     }
 
     @Override
     public void changeEventFields(EventFullDto eventFullDto) {
         Event event = eventRepository.findById(eventFullDto.getId())
-                .orElseThrow(() -> new NotFoundException("Событие с id=" + eventFullDto.getId() + " не найдено"));
+                .orElseThrow(() -> new NotFoundException("Event with id=" + eventFullDto.getId() + " not found"));
 
         if (!eventFullDto.getConfirmedRequests().equals(event.getConfirmedRequests())) {
             event.setConfirmedRequests(eventFullDto.getConfirmedRequests());
             eventRepository.save(event);
-            log.info("Updated confirmed requests for event id={}: {}", event.getId(), event.getConfirmedRequests());
+            log.info("Updated confirmed requests for event id={} to {}", event.getId(), event.getConfirmedRequests());
         }
     }
 
@@ -152,7 +152,7 @@ public class EventPublicServiceImpl implements EventPublicService {
         }
 
         if (recommendedEvents.isEmpty()) {
-            log.info("No recommendations found for userId={}", userId);
+            log.info("No recommendations available for userId={}", userId);
             return List.of();
         }
 
@@ -165,7 +165,7 @@ public class EventPublicServiceImpl implements EventPublicService {
                 .toList();
 
         if (events.isEmpty()) {
-            log.info("No published events found for recommended eventIds={}", eventIds);
+            log.info("No published events found for recommended event IDs: {}", eventIds);
             return List.of();
         }
 
@@ -178,7 +178,7 @@ public class EventPublicServiceImpl implements EventPublicService {
         try {
             ratings = analyzerClient.getInteractionsCount(eventIds);
         } catch (StatusRuntimeException e) {
-            log.error("Failed to fetch ratings for eventIds={}: {}", eventIds, e.getStatus(), e);
+            log.error("Failed to retrieve ratings for event IDs {}: {}", eventIds, e.getStatus(), e);
             ratings = Map.of();
         }
 
@@ -187,7 +187,7 @@ public class EventPublicServiceImpl implements EventPublicService {
             UserShortDto initiator = usersDto.stream()
                     .filter(user -> user.getId().equals(event.getInitiatorId()))
                     .findAny()
-                    .orElseThrow(() -> new NotFoundException("Пользователь с id=" + event.getInitiatorId() + " не найден"));
+                    .orElseThrow(() -> new NotFoundException("User with id=" + event.getInitiatorId() + " not found"));
             double rating = finalRatings.getOrDefault(event.getId(), 0.0);
             event.setRating(rating);
             return eventMapper.toShortDto(event, initiator);
@@ -204,16 +204,16 @@ public class EventPublicServiceImpl implements EventPublicService {
                 .anyMatch(req -> req.getEvent().equals(eventId) && req.getStatus().equals(RequestStatus.CONFIRMED.toString()));
 
         if (!hasConfirmedRequest) {
-            log.warn("User id={} has not confirmed registration for event id={}", userId, eventId);
-            throw new ValidationException("Пользователь не зарегистрирован на мероприятие с id=" + eventId);
+            log.warn("User id={} is not registered for event id={}", userId, eventId);
+            throw new ValidationException("User is not registered for event with id=" + eventId);
         }
 
         try {
-            log.info("Recording LIKE action for userId={} and eventId={}", userId, eventId);
+            log.info("Recording LIKE from userId={} for eventId={}", userId, eventId);
             collectorClient.addLikeEvent(userId, eventId);
         } catch (StatusRuntimeException e) {
             log.error("gRPC error while recording LIKE for eventId={}: {}", eventId, e.getStatus(), e);
-            throw new ValidationException("Ошибка при записи лайка для мероприятия с id=" + eventId);
+            throw new ValidationException("Error while processing like for event with id=" + eventId);
         }
     }
 
@@ -222,7 +222,7 @@ public class EventPublicServiceImpl implements EventPublicService {
         try {
             ratings = analyzerClient.getInteractionsCount(List.of(event.getId()));
         } catch (StatusRuntimeException e) {
-            log.error("Failed to fetch rating for eventId={}: {}", event.getId(), e.getStatus(), e);
+            log.error("Failed to retrieve rating for eventId={}: {}", event.getId(), e.getStatus(), e);
             ratings = Map.of();
         }
 
@@ -232,7 +232,7 @@ public class EventPublicServiceImpl implements EventPublicService {
         if (userId != null) {
             try {
                 collectorClient.viewEvent(userId, event.getId());
-                log.info("Recorded VIEW action for userId={} and eventId={}", userId, event.getId());
+                log.info("Recorded VIEW from userId={} for eventId={}", userId, event.getId());
             } catch (StatusRuntimeException e) {
                 log.error("gRPC error while recording VIEW for eventId={}: {}", event.getId(), e.getStatus(), e);
             }
@@ -241,7 +241,7 @@ public class EventPublicServiceImpl implements EventPublicService {
         UserShortDto initiator = userClient.getUsers(List.of(event.getInitiatorId()), 0, 1).stream()
                 .map(userDto -> UserShortDto.builder().id(userDto.getId()).name(userDto.getName()).build())
                 .findFirst()
-                .orElseThrow(() -> new NotFoundException("Пользователь с id=" + event.getInitiatorId() + " не найден"));
+                .orElseThrow(() -> new NotFoundException("User with id=" + event.getInitiatorId() + " not found"));
 
         return eventMapper.toFullDto(event, initiator);
     }
