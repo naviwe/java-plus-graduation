@@ -25,10 +25,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ewm.category.model.Category;
+import ru.practicum.ewm.stats.client.RecommendationClient;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -42,6 +44,7 @@ public class EventAdminServiceImpl implements EventAdminService {
     UserFeignClient userClient;
     EventValidationService eventValidationService;
     CheckCategoryService checkCategoryService;
+    RecommendationClient recommendationClient;
 
     static LocalDateTime minTime = LocalDateTime.of(1970, 1, 1, 0, 0);
     static LocalDateTime maxTime = LocalDateTime.of(3000, 1, 1, 0, 0);
@@ -51,38 +54,28 @@ public class EventAdminServiceImpl implements EventAdminService {
     public List<EventFullDto> getEvents(List<Long> userIds, List<String> statesStr,
                                         List<Long> categories, String rangeStart,
                                         String rangeEnd, Integer from, Integer size) {
-
-        LocalDateTime start = rangeStart != null ? LocalDateTime.parse(rangeStart, formatter) :
-                minTime;
-        LocalDateTime end = rangeEnd != null ? LocalDateTime.parse(rangeEnd, formatter) :
-                maxTime;
+        LocalDateTime start = rangeStart != null ? LocalDateTime.parse(rangeStart, formatter) : minTime;
+        LocalDateTime end = rangeEnd != null ? LocalDateTime.parse(rangeEnd, formatter) : maxTime;
 
         List<State> states = statesStr != null ? statesStr.stream().map(State::valueOf).toList() : null;
 
         Pageable pageable = PageRequest.of(from / size, size);
-        if (userIds != null) {
-            List<UserShortDto> usersDto = userClient.getUsers(userIds, 0, userIds.size()).stream()
-                    .map(userDto -> UserShortDto.builder().id(userDto.getId())
-                            .name(userDto.getName()).build()).toList();
-            return eventRepository.findAllEventsByAdmin(userIds, states,
-                            categories, start,
-                            end, pageable).stream()
-                    .map(event -> eventMapper.toFullDto(event, usersDto.stream()
-                            .filter(userShortDto -> userShortDto.getId().equals(event.getInitiatorId())).findAny()
-                            .orElseThrow(() -> new NotFoundException("Пользователя с таким id нет")))).toList();
-        } else {
-            Page<Event> events = eventRepository.findAllEventsByAdmin(userIds, states,
-                    categories, start,
-                    end, pageable);
-            List<Long> userFromClientIds = events.stream().map(Event::getInitiatorId).toList();
-            List<UserShortDto> usersDto = userClient.getUsers(userFromClientIds, 0,
-                    userFromClientIds.size()).stream().map(userDto -> UserShortDto.builder()
-                    .id(userDto.getId()).name(userDto.getName()).build()).toList();
-            return events.map(event -> eventMapper.toFullDto(event, usersDto.stream()
-                    .filter(userShortDto -> userShortDto.getId().equals(event.getInitiatorId())).findAny()
-                    .orElseThrow(() -> new NotFoundException("Пользователя с таким id нет")))).toList();
-        }
+        Page<Event> events = eventRepository.findAllEventsByAdmin(userIds, states, categories, start, end, pageable);
+        List<Long> eventIds = events.getContent().stream().map(Event::getId).toList();
+        Map<Long, Double> ratings = recommendationClient.getInteractionsCount(eventIds);
 
+        List<Long> userFromClientIds = events.stream().map(Event::getInitiatorId).toList();
+        List<UserShortDto> usersDto = userClient.getUsers(userFromClientIds, 0, userFromClientIds.size()).stream()
+                .map(userDto -> UserShortDto.builder().id(userDto.getId()).name(userDto.getName()).build())
+                .toList();
+
+        return events.map(event -> {
+            EventFullDto dto = eventMapper.toFullDto(event, usersDto.stream()
+                    .filter(userShortDto -> userShortDto.getId().equals(event.getInitiatorId())).findAny()
+                    .orElseThrow(() -> new NotFoundException("Пользователя с таким id нет")));
+            dto.setRating(ratings.getOrDefault(event.getId(), 0.0));
+            return dto;
+        }).toList();
     }
 
     @Override
@@ -123,8 +116,7 @@ public class EventAdminServiceImpl implements EventAdminService {
         if (updateEventRequest.getLocation() != null) {
             Double lat = updateEventRequest.getLocation().getLat();
             Double lon = updateEventRequest.getLocation().getLon();
-            Location location = locationRepository.findByLatAndLon(lat,
-                            updateEventRequest.getLocation().getLon())
+            Location location = locationRepository.findByLatAndLon(lat, updateEventRequest.getLocation().getLon())
                     .orElseGet(() -> locationRepository.save(Location.builder().lon(lon).lat(lat).build()));
             location.setLat(lat);
             location.setLon(lon);
@@ -142,13 +134,13 @@ public class EventAdminServiceImpl implements EventAdminService {
         if (updateEventRequest.getTitle() != null) {
             event.setTitle(updateEventRequest.getTitle());
         }
-        UserDto userDto = userClient.getUser(event.getInitiatorId());
-
-        return LoggingUtils.logAndReturn(eventMapper.toFullDto(eventRepository.save(event), UserShortDto.builder()
-                        .id(userDto.getId())
-                        .name(userDto.getName()).build()),
-                dto -> log.info("Event updated successfully: {}", dto)
-        );
+        Event savedEvent = eventRepository.save(event);
+        UserDto userDto = userClient.getUser(savedEvent.getInitiatorId());
+        Map<Long, Double> ratings = recommendationClient.getInteractionsCount(List.of(savedEvent.getId()));
+        EventFullDto eventFullDto = eventMapper.toFullDto(savedEvent, UserShortDto.builder()
+                .id(userDto.getId())
+                .name(userDto.getName()).build());
+        eventFullDto.setRating(ratings.getOrDefault(savedEvent.getId(), 0.0));
+        return LoggingUtils.logAndReturn(eventFullDto, dto -> log.info("Event updated successfully: {}", dto));
     }
-
 }

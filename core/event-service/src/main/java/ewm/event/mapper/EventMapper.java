@@ -1,7 +1,6 @@
 package ewm.event.mapper;
 
 import ewm.event.Event;
-
 import ewm.interaction.dto.event.CategoryDto;
 import ewm.interaction.dto.event.EventFullDto;
 import ewm.interaction.dto.event.EventShortDto;
@@ -25,12 +24,14 @@ public interface EventMapper {
     @Mapping(target = "location", source = "event.location")
     @Mapping(target = "eventDate", source = "event.eventDate")
     @Mapping(target = "id", source = "event.id")
+    @Mapping(target = "rating", source = "event.rating")
     EventFullDto toFullDto(Event event, UserShortDto initiator);
 
     @Mapping(target = "category", source = "event.category", qualifiedByName = "mapCategory")
     @Mapping(target = "initiator", source = "initiator")
     @Mapping(target = "eventDate", source = "event.eventDate")
     @Mapping(target = "id", source = "event.id")
+    @Mapping(target = "rating", source = "event.rating")
     EventShortDto toShortDto(Event event, UserShortDto initiator);
 
     List<EventShortDto> toShortDtoList(List<Event> events);
@@ -42,7 +43,7 @@ public interface EventMapper {
     @Mapping(target = "createdOn", ignore = true)
     @Mapping(target = "publishedOn", ignore = true)
     @Mapping(target = "state", ignore = true)
-    @Mapping(target = "views", ignore = true)
+    @Mapping(target = "rating", ignore = true)
     @Mapping(target = "eventDate", source = "eventDate", qualifiedByName = "stringToLocalDateTime")
     Event toEvent(NewEventDto newEventDto);
 

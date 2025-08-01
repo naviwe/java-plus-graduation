@@ -16,6 +16,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.ewm.stats.client.CollectorClient;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -34,14 +35,14 @@ public class RequestServiceImpl implements RequestService {
     RequestMapper requestMapper;
     UserFeignClient userClient;
     EventFeignClient eventClient;
+    CollectorClient collectorClient;
 
     @Override
     public List<ParticipationRequestDto> findRequestsByUserId(Long userId) {
         userClient.getUser(userId);
         return logAndReturn(
                 requestMapper.toDtoList(requestRepository.findByRequesterId(userId)),
-                requests -> log.info("Found {} requests for user with id={}",
-                        requests.size(), userId)
+                requests -> log.info("Found {} requests for user with id={}", requests.size(), userId)
         );
     }
 
@@ -59,16 +60,18 @@ public class RequestServiceImpl implements RequestService {
                 throw new ConflictException("Достигнут лимит участников события");
             }
         }
+        Request request = Request.builder()
+                .requesterId(requesterId)
+                .eventId(event.getId())
+                .created(LocalDateTime.now())
+                .status(status)
+                .build();
         ParticipationRequestDto dto = logAndReturn(
-                requestMapper.toDto(requestRepository.save(Request.builder()
-                        .requesterId(requesterId)
-                        .eventId(event.getId())
-                        .created(LocalDateTime.now())
-                        .status(status)
-                        .build())),
-                savedRequest -> log.info("{} request created successfully: {}",
-                        savedRequest.getStatus(), savedRequest)
+                requestMapper.toDto(requestRepository.save(request)),
+                savedRequest -> log.info("{} request created successfully: {}", savedRequest.getStatus(), savedRequest)
         );
+
+        collectorClient.registrationInEvent(requesterId, eventId);
 
         if (status.equals(RequestStatus.CONFIRMED)) {
             event.setConfirmedRequests(event.getConfirmedRequests() + 1);
@@ -91,7 +94,6 @@ public class RequestServiceImpl implements RequestService {
         );
     }
 
-
     @Override
     public List<ParticipationRequestDto> findRequestsByEventId(Long userId, Long eventId) {
         userClient.getUser(userId);
@@ -105,7 +107,6 @@ public class RequestServiceImpl implements RequestService {
                 .map(requestMapper::toDto)
                 .collect(Collectors.toList());
     }
-
 
     @Override
     @Transactional

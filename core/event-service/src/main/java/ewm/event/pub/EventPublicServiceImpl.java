@@ -3,11 +3,11 @@ package ewm.event.pub;
 import ewm.event.Event;
 import ewm.event.EventRepository;
 import ewm.event.mapper.EventMapper;
+import ewm.interaction.dto.user.UserDto;
 import ewm.interaction.feign.UserFeignClient;
 import ewm.interaction.dto.event.EventFullDto;
 import ewm.interaction.dto.event.EventShortDto;
 import ewm.interaction.dto.event.State;
-import ewm.interaction.dto.user.UserDto;
 import ewm.interaction.dto.user.UserShortDto;
 import ewm.interaction.exception.NotFoundException;
 import ewm.interaction.exception.ValidationException;
@@ -21,13 +21,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import ewm.EndpointHitDto;
-import ewm.StatsDto;
-import ewm.StatsClient;
+import org.springframework.web.bind.annotation.RequestHeader;
+import ru.practicum.ewm.stats.client.CollectorClient;
+import ru.practicum.ewm.stats.client.RecommendationClient;
+import ru.practicum.grpc.stats.recommendation.RecommendedEventProto;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -35,33 +38,34 @@ import java.util.stream.Collectors;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EventPublicServiceImpl implements EventPublicService {
 
-    private EventRepository eventRepository;
-    private EventMapper eventMapper;
-    private EventValidationService eventValidationService;
-    private UserFeignClient userClient;
+    EventRepository eventRepository;
+    EventMapper eventMapper;
+    EventValidationService eventValidationService;
+    UserFeignClient userClient;
+    CollectorClient collectorClient;
+    RecommendationClient recommendationClient;
 
-
-    private String app;
-    private StatsClient client;
+    String app;
 
     public EventPublicServiceImpl(EventRepository eventRepository,
                                   EventMapper eventMapper,
                                   EventValidationService eventValidationService,
                                   UserFeignClient userClient,
-                                  @Value("${my.app}") String app,
-                                  StatsClient client) {
+                                  CollectorClient collectorClient,
+                                  RecommendationClient recommendationClient,
+                                  @Value("${my.app}") String app) {
         this.eventRepository = eventRepository;
         this.eventMapper = eventMapper;
         this.eventValidationService = eventValidationService;
-        this.app = app;
         this.userClient = userClient;
-        this.client = client;
+        this.collectorClient = collectorClient;
+        this.recommendationClient = recommendationClient;
+        this.app = app;
     }
 
     static LocalDateTime minTime = LocalDateTime.of(1970, 1, 1, 0, 0);
     static LocalDateTime maxTime = LocalDateTime.of(3000, 1, 1, 0, 0);
     static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
 
     @Override
     public List<EventShortDto> getEvents(String text, List<Long> categories, Boolean paid,
@@ -74,65 +78,52 @@ public class EventPublicServiceImpl implements EventPublicService {
         text = text != null ? text : "";
         Page<Event> events = eventRepository.findEvents(text, paid, start, end, categories, onlyAvailable,
                 State.PUBLISHED, pageable);
-        List<Long> userIds = events.stream().map(Event::getInitiatorId).toList();
-        if (userIds.isEmpty()) {
+        if (events.isEmpty()) {
             throw new ValidationException("Нет подходящих событий");
         }
+
+        List<Long> userIds = events.stream().map(Event::getInitiatorId).toList();
         List<UserShortDto> usersDto = userClient.getUsers(userIds, 0, userIds.size()).stream()
-                .map(userDto -> UserShortDto.builder().id(userDto.getId()).name(userDto.getName()).build()).toList();
+                .map(userDto -> UserShortDto.builder().id(userDto.getId()).name(userDto.getName()).build())
+                .toList();
+
         List<EventShortDto> dtos = events.map(event -> eventMapper.toShortDto(event, usersDto.stream()
                 .filter(userShortDto -> userShortDto.getId().equals(event.getInitiatorId())).findAny()
                 .orElseThrow(() -> new NotFoundException("Пользователя с таким id нет")))).toList();
 
+        List<Long> eventIds = dtos.stream().map(EventShortDto::getId).collect(Collectors.toList());
+        Map<Long, Double> ratings = recommendationClient.getInteractionsCount(eventIds);
+        dtos.forEach(dto -> dto.setRating(ratings.getOrDefault(dto.getId(), 0.0)));
+
         if (sort != null) {
-            dtos = events.stream()
-                    .sorted((event1, event2) -> {
-                        if (sort.equals("EVENT_DATE")) {
-                            if (event1.getEventDate().isBefore(event2.getEventDate()))
-                                return -1;
-                            else
-                                return 1;
-                        } else if (sort.equals("VIEWS")) {
-                            return (int) (event1.getViews() - event2.getViews());
-                        }
-                        return 1;
-                    })
-                    .map(event -> eventMapper.toShortDto(event, usersDto.stream()
-                            .filter(userShortDto -> userShortDto.getId().equals(event.getInitiatorId())).findAny()
-                            .orElseThrow(() -> new NotFoundException("Пользователя с таким id нет"))))
-                    .toList();
+            if (sort.equals("EVENT_DATE")) {
+                dtos = dtos.stream()
+                        .sorted(Comparator.comparing(EventShortDto::getEventDate))
+                        .collect(Collectors.toList());
+            } else if (sort.equals("RATING")) {
+                dtos = dtos.stream()
+                        .sorted(Comparator.comparing(EventShortDto::getRating, Comparator.reverseOrder()))
+                        .collect(Collectors.toList());
+            }
         }
 
-        hitStats(request);
-
-        List<String> uris = dtos.stream()
-                .map(dto -> request.getRequestURI() + "/" + dto.getId())
-                .collect(Collectors.toList());
-
-        List<StatsDto> stats = client.getStats(minTime.format(formatter), maxTime.format(formatter), uris, true);
-
-        for (EventShortDto dto : dtos) {
-            stats.stream()
-                    .filter(stat -> stat.getUri().equals(request.getRequestURI() + "/" + dto.getId()))
-                    .findFirst()
-                    .ifPresent(stat -> dto.setViews(stat.getHits()));
-        }
-
-        if (dtos.isEmpty()) {
-            throw new ValidationException("Нет подходящих событий");
-        } else {
-            return dtos;
-        }
+        return dtos;
     }
 
     @Override
-    public EventFullDto getEventById(Long id, HttpServletRequest request) {
+    public EventFullDto getEventById(Long id, HttpServletRequest request, @RequestHeader("X-EWM-USER-ID") Long userId) {
         Event event = eventValidationService.checkPublishedEvent(id);
         UserDto userDto = userClient.getUser(event.getInitiatorId());
-        EventFullDto eventFullDto = eventMapper.toFullDto(event, UserShortDto.builder().id(userDto.getId())
-                .name(userDto.getName()).build());
-        hitStats(request);
-        eventFullDto.setViews(getStats(request).getFirst().getHits());
+        EventFullDto eventFullDto = eventMapper.toFullDto(event, UserShortDto.builder()
+                .id(userDto.getId())
+                .name(userDto.getName())
+                .build());
+
+        collectorClient.viewEvent(userId, id);
+
+        Map<Long, Double> ratings = recommendationClient.getInteractionsCount(List.of(id));
+        eventFullDto.setRating(ratings.getOrDefault(id, 0.0));
+
         return eventFullDto;
     }
 
@@ -144,17 +135,6 @@ public class EventPublicServiceImpl implements EventPublicService {
                 .name(userDto.getName()).build());
     }
 
-    private void hitStats(HttpServletRequest request) {
-        client.saveHit(EndpointHitDto.builder().app(app).uri(request.getRequestURI()).ip(request.getRemoteAddr())
-                .timestamp(LocalDateTime.now()).build());
-    }
-
-    private List<StatsDto> getStats(HttpServletRequest request) {
-        return client.getStats(minTime.format(formatter),
-                maxTime.format(formatter), List.of(request.getRequestURI()), true);
-    }
-
-
     @Override
     public void changeEventFields(EventFullDto eventFullDto) {
         Event event = eventRepository.findById(eventFullDto.getId())
@@ -163,6 +143,50 @@ public class EventPublicServiceImpl implements EventPublicService {
             event.setConfirmedRequests(eventFullDto.getConfirmedRequests());
         }
         eventRepository.save(event);
+    }
 
+    @Override
+    public List<EventShortDto> getRecommendations(@RequestHeader("X-EWM-USER-ID") Long userId, Integer from, Integer size) {
+        List<RecommendedEventProto> recommendations = recommendationClient.getRecommendations(userId, size)
+                .toList();
+
+        List<Long> eventIds = recommendations.stream()
+                .map(RecommendedEventProto::getEventId)
+                .toList();
+
+        Pageable pageable = PageRequest.of(from / size, size);
+        Page<Event> events = eventRepository.findEvents(null, null, minTime, maxTime, null, null, State.PUBLISHED, pageable);
+
+        List<Long> userIds = events.stream().map(Event::getInitiatorId).toList();
+        List<UserShortDto> usersDto = userClient.getUsers(userIds, 0, userIds.size()).stream()
+                .map(userDto -> UserShortDto.builder().id(userDto.getId()).name(userDto.getName()).build())
+                .toList();
+
+        List<EventShortDto> dtos = events.map(event -> eventMapper.toShortDto(event, usersDto.stream()
+                .filter(userShortDto -> userShortDto.getId().equals(event.getInitiatorId())).findAny()
+                .orElseThrow(() -> new NotFoundException("Пользователя с таким id нет")))).toList();
+
+        Map<Long, Double> ratings = recommendations.stream()
+                .collect(Collectors.toMap(RecommendedEventProto::getEventId, RecommendedEventProto::getScore));
+        dtos.forEach(dto -> dto.setRating(ratings.getOrDefault(dto.getId(), 0.0)));
+
+        return dtos.stream()
+                .filter(dto -> eventIds.contains(dto.getId()))
+                .sorted(Comparator.comparing(EventShortDto::getRating, Comparator.reverseOrder()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void likeEvent(Long eventId, @RequestHeader("X-EWM-USER-ID") Long userId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("События с таким id нет"));
+        boolean hasVisited = recommendationClient.getInteractionsCount(List.of(eventId))
+                .entrySet().stream()
+                .anyMatch(entry -> entry.getKey().equals(eventId) && entry.getValue() > 0);
+        if (!hasVisited) {
+            throw new ValidationException("Пользователь не посещал мероприятие с id=" + eventId);
+        }
+
+        collectorClient.addLikeEvent(userId, eventId);
     }
 }

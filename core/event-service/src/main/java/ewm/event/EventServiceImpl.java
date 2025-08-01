@@ -22,6 +22,8 @@ import ewm.event.mapper.EventMapper;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
+import ru.practicum.ewm.stats.client.RecommendationClient;
 
 import static ewm.interaction.utils.LoggingUtils.logAndReturn;
 
@@ -37,20 +39,26 @@ public class EventServiceImpl implements EventService {
     EventMapper eventMapper;
     CheckCategoryService checkCategoryService;
     LocationRepository locationRepository;
+    RecommendationClient recommendationClient;
 
     @Override
     public List<EventShortDto> findEventsByInitiatorId(Long userId, Integer from, Integer size) {
         UserDto userDto = userClient.getUser(userId);
         Pageable pageRequest = PageRequest.of(from / size, size);
         Page<Event> eventPage = eventRepository.findByInitiatorId(userId, pageRequest);
+        List<Long> eventIds = eventPage.getContent().stream().map(Event::getId).toList();
+        Map<Long, Double> ratings = recommendationClient.getInteractionsCount(eventIds);
         return logAndReturn(eventPage.getContent()
                         .stream()
-                        .map(event -> eventMapper.toShortDto(event, UserShortDto.builder()
-                                .id(userDto.getId())
-                                .name(userDto.getName()).build()))
+                        .map(event -> {
+                            EventShortDto dto = eventMapper.toShortDto(event, UserShortDto.builder()
+                                    .id(userDto.getId())
+                                    .name(userDto.getName()).build());
+                            dto.setRating(ratings.getOrDefault(event.getId(), 0.0));
+                            return dto;
+                        })
                         .toList(),
-                events -> log.info("Found {} events for user with id={}",
-                        events.size(), userId)
+                events -> log.info("Found {} events for user with id={}", events.size(), userId)
         );
     }
 
@@ -84,12 +92,14 @@ public class EventServiceImpl implements EventService {
         event.setCreatedOn(LocalDateTime.now());
         event.setState(State.PENDING);
         event.setConfirmedRequests(0L);
-        event.setViews(0L);
-        return logAndReturn(eventMapper.toFullDto(eventRepository.save(event),UserShortDto.builder()
-                        .id(userDto.getId())
-                        .name(userDto.getName()).build()),
-                dto -> log.info("Event created successfully: {}", dto)
-        );
+        event.setRating(0.0);
+        Event savedEvent = eventRepository.save(event);
+        Map<Long, Double> ratings = recommendationClient.getInteractionsCount(List.of(savedEvent.getId()));
+        EventFullDto eventFullDto = eventMapper.toFullDto(savedEvent, UserShortDto.builder()
+                .id(userDto.getId())
+                .name(userDto.getName()).build());
+        eventFullDto.setRating(ratings.getOrDefault(savedEvent.getId(), 0.0));
+        return logAndReturn(eventFullDto, dto -> log.info("Event created successfully: {}", dto));
     }
 
     @Override
@@ -98,8 +108,7 @@ public class EventServiceImpl implements EventService {
         UserDto userDto = userClient.getUser(userId);
         Event event = eventValidationService.checkEvent(eventId);
         if (!event.getInitiatorId().equals(userId)) {
-            throw new ConflictException(String.format("User with id=%d isnt a initiator for event with id=%d",
-                    userId, eventId));
+            throw new ConflictException(String.format("User with id=%d isn't a initiator for event with id=%d", userId, eventId));
         }
         if (event.getState() == State.PUBLISHED) {
             throw new ConflictException("Only pending or canceled events can be changed");
@@ -147,14 +156,15 @@ public class EventServiceImpl implements EventService {
                     event.setState(State.CANCELED);
                     break;
                 default:
-                    throw new IllegalArgumentException("Неподдерживаемое действие: "
-                            + updateEventRequest.getStateAction());
+                    throw new IllegalArgumentException("Неподдерживаемое действие: " + updateEventRequest.getStateAction());
             }
         }
-        return logAndReturn(eventMapper.toFullDto(eventRepository.save(event),UserShortDto.builder()
-                        .id(userDto.getId())
-                        .name(userDto.getName()).build()),
-                dto -> log.info("Event updated successfully: {}", dto)
-        );
+        Event savedEvent = eventRepository.save(event);
+        Map<Long, Double> ratings = recommendationClient.getInteractionsCount(List.of(savedEvent.getId()));
+        EventFullDto eventFullDto = eventMapper.toFullDto(savedEvent, UserShortDto.builder()
+                .id(userDto.getId())
+                .name(userDto.getName()).build());
+        eventFullDto.setRating(ratings.getOrDefault(savedEvent.getId(), 0.0));
+        return logAndReturn(eventFullDto, dto -> log.info("Event updated successfully: {}", dto));
     }
 }
