@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 @Component
-public class RecommendationClient {
+public class AnalyzerClient {
 
     @GrpcClient("analyzer")
     private RecommendationsControllerGrpc.RecommendationsControllerBlockingStub recommendationsController;
