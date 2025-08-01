@@ -53,16 +53,30 @@ public class EventPublicServiceImpl implements EventPublicService {
     public List<EventShortDto> getEvents(String text, List<Long> categories, Boolean paid,
                                          String rangeStart, String rangeEnd, Boolean onlyAvailable,
                                          String sort, Integer from, Integer size, HttpServletRequest request) {
+        if (rangeStart != null && rangeEnd != null) {
+            LocalDateTime start = LocalDateTime.parse(rangeStart, formatter);
+            LocalDateTime end = LocalDateTime.parse(rangeEnd, formatter);
+            if (end.isBefore(start)) {
+                throw new ValidationException("The end date rangeEnd cannot be earlier than the start date rangeStart");
+            }
+        }
+
         Sort sortOption = sort != null && sort.equals("EVENT_DATE") ?
                 Sort.by("eventDate").ascending() :
                 Sort.by("rating").descending();
         Pageable pageable = PageRequest.of(from / size, size, sortOption);
 
-        LocalDateTime start = rangeStart != null ? LocalDateTime.parse(rangeStart, formatter) : LocalDateTime.now();
-        LocalDateTime end = rangeEnd != null ? LocalDateTime.parse(rangeEnd, formatter) : LocalDateTime.now().plusYears(100);
+        LocalDateTime start = rangeStart != null ?
+                LocalDateTime.parse(rangeStart, formatter) :
+                LocalDateTime.now();
+        LocalDateTime end = rangeEnd != null ?
+                LocalDateTime.parse(rangeEnd, formatter) :
+                LocalDateTime.now().plusYears(100);
 
         text = text != null ? text.toLowerCase() : "";
-        Page<Event> events = eventRepository.findEvents(text, paid, start, end, categories, onlyAvailable, State.PUBLISHED, pageable);
+
+        Page<Event> events = eventRepository.findEvents(
+                text, paid, start, end, categories, onlyAvailable, State.PUBLISHED, pageable);
 
         if (events.isEmpty()) {
             log.info("No events found for query: text={}, categories={}, paid={}, start={}, end={}, onlyAvailable={}",
@@ -81,7 +95,10 @@ public class EventPublicServiceImpl implements EventPublicService {
 
         List<Long> userIds = events.getContent().stream().map(Event::getInitiatorId).toList();
         List<UserShortDto> usersDto = userClient.getUsers(userIds, 0, userIds.size()).stream()
-                .map(userDto -> UserShortDto.builder().id(userDto.getId()).name(userDto.getName()).build())
+                .map(userDto -> UserShortDto.builder()
+                        .id(userDto.getId())
+                        .name(userDto.getName())
+                        .build())
                 .toList();
 
         Map<Long, Double> finalRatings = ratings;
