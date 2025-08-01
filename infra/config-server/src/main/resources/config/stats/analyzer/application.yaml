@@ -7,9 +7,9 @@ spring:
       ddl-auto: none
   datasource:
     driverClassName: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:6542/recommendation_db
-    username: main
-    password: main
+    url: jdbc:postgresql://localhost:5432/recommendationDb
+    username: dbuser
+    password: 12345
 
 analyzer:
   kafka:
