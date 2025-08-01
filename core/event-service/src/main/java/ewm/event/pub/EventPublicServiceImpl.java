@@ -45,22 +45,18 @@ public class EventPublicServiceImpl implements EventPublicService {
     CollectorClient collectorClient;
     RecommendationClient recommendationClient;
 
-    String app;
-
     public EventPublicServiceImpl(EventRepository eventRepository,
                                   EventMapper eventMapper,
                                   EventValidationService eventValidationService,
                                   UserFeignClient userClient,
                                   CollectorClient collectorClient,
-                                  RecommendationClient recommendationClient,
-                                  @Value("${my.app}") String app) {
+                                  RecommendationClient recommendationClient) {
         this.eventRepository = eventRepository;
         this.eventMapper = eventMapper;
         this.eventValidationService = eventValidationService;
         this.userClient = userClient;
         this.collectorClient = collectorClient;
         this.recommendationClient = recommendationClient;
-        this.app = app;
     }
 
     static LocalDateTime minTime = LocalDateTime.of(1970, 1, 1, 0, 0);
