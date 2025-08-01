@@ -20,5 +20,13 @@ spring:
     init:
       mode: always
       schema-locations: classpath:schema.sql
+grpc:
+  client:
+    collector:
+      address: 'discovery:///collector'
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: plaintext
+
 server:
   port: 0

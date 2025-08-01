@@ -20,7 +20,20 @@ spring:
     init:
       mode: always
       schema-locations: classpath:schema.sql
+grpc:
+  client:
+    collector:
+      address: 'discovery:///collector'
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: plaintext
+    analyzer:
+      address: 'discovery:///analyzer'
+      enableKeepAlive: true
+      keepAliveWithoutCalls: true
+      negotiationType: plaintext
+
+statsServiceId: stats-server
+
 server:
   port: 0
-my:
-  app: ewm-main-service

@@ -57,8 +57,8 @@ public class Event {
     @Enumerated(EnumType.STRING)
     State state;
 
-    @Column(nullable = false, columnDefinition = "BIGINT DEFAULT 0")
-    Long views;
+    @Column(nullable = false, columnDefinition = "DOUBLE PRECISION DEFAULT 0.0")
+    Double rating;
 
     @JoinColumn(name = "initiator_id", nullable = false)
     @ToString.Exclude

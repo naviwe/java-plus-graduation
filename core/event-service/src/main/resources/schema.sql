@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS events (
     state VARCHAR(10) NOT NULL,
     published_on TIMESTAMP,
     location_id BIGINT NOT NULL,
-    views INTEGER NOT NULL DEFAULT 0,
+    rating DOUBLE PRECISION DEFAULT 0.0 NOT NULL,
     CONSTRAINT pk_events PRIMARY KEY (id),
     CONSTRAINT fk_events_to_categories FOREIGN KEY (category_id) REFERENCES categories(id),
     CONSTRAINT fk_events_to_locations FOREIGN KEY (location_id) REFERENCES locations(id)

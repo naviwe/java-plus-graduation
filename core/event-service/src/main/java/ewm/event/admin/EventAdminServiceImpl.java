@@ -25,6 +25,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ewm.category.model.Category;
+import ru.practicum.ewm.stats.client.AnalyzerClient;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -42,6 +43,7 @@ public class EventAdminServiceImpl implements EventAdminService {
     UserFeignClient userClient;
     EventValidationService eventValidationService;
     CheckCategoryService checkCategoryService;
+    AnalyzerClient recommendationClient;
 
     static LocalDateTime minTime = LocalDateTime.of(1970, 1, 1, 0, 0);
     static LocalDateTime maxTime = LocalDateTime.of(3000, 1, 1, 0, 0);
